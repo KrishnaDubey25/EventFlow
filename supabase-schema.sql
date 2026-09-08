@@ -176,3 +176,73 @@ where not exists (select 1 from public.resources where event_id='unity-arena-fin
 insert into public.resources (event_id,resource_type,name,location,total_capacity,available_capacity,status,metadata)
 select 'unity-arena-final-2026','transport','Metro East Shuttle Pool','Metro East',720,202,'active','{"standby_vehicles":2}'::jsonb
 where not exists (select 1 from public.resources where event_id='unity-arena-final-2026' and name='Metro East Shuttle Pool');
+
+-- ================================================================
+-- LIVE ATTENDEE GPS (privacy-preserving prototype)
+-- Each signed-in attendee has one current row. The organizer map does
+-- not read raw rows; it calls get_crowd_cells() and receives rounded,
+-- short-lived aggregate cells only.
+-- ================================================================
+create table if not exists public.attendee_locations (
+  event_id text not null references public.events(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  device_id text,
+  lat double precision not null check (lat between -90 and 90),
+  lng double precision not null check (lng between -180 and 180),
+  accuracy_m integer,
+  heading_deg double precision,
+  speed_mps double precision,
+  last_seen timestamptz not null default now(),
+  primary key (event_id, user_id)
+);
+
+create index if not exists attendee_locations_event_seen_idx
+  on public.attendee_locations (event_id, last_seen desc);
+
+alter table public.attendee_locations enable row level security;
+
+drop policy if exists "attendee location own select" on public.attendee_locations;
+create policy "attendee location own select"
+  on public.attendee_locations for select to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "attendee location own insert" on public.attendee_locations;
+create policy "attendee location own insert"
+  on public.attendee_locations for insert to authenticated
+  with check (auth.uid() = user_id);
+
+drop policy if exists "attendee location own update" on public.attendee_locations;
+create policy "attendee location own update"
+  on public.attendee_locations for update to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "attendee location own delete" on public.attendee_locations;
+create policy "attendee location own delete"
+  on public.attendee_locations for delete to authenticated
+  using (auth.uid() = user_id);
+
+create or replace function public.get_crowd_cells(p_event_id text)
+returns table(lat double precision, lng double precision, people_count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    round(al.lat::numeric, 4)::double precision as lat,
+    round(al.lng::numeric, 4)::double precision as lng,
+    count(*)::bigint as people_count
+  from public.attendee_locations al
+  where al.event_id = p_event_id
+    and al.last_seen > now() - interval '2 minutes'
+  group by round(al.lat::numeric, 4), round(al.lng::numeric, 4)
+  order by people_count desc
+  limit 200;
+$$;
+
+revoke all on function public.get_crowd_cells(text) from public;
+grant execute on function public.get_crowd_cells(text) to authenticated;
+
+-- Allow the public event map to read only aggregate crowd cells in demo mode.
+-- Raw attendee_locations rows remain protected by RLS and are NOT exposed.
+grant execute on function public.get_crowd_cells(text) to anon;

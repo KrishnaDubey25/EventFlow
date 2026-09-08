@@ -175,7 +175,7 @@ function authForm(){
     <div class="field"><label>Role</label><div class="auth-role-grid">${['organizer','operator','attendee'].map(r=>`<button class="role-option ${authRole===r?'active':''}" onclick="event.preventDefault();authRole='${r}';$('#authContent').innerHTML=authForm()">${r[0].toUpperCase()+r.slice(1)}</button>`).join('')}</div></div>
     <div class="auth-status ${state.backend==='connected'?'good':''}">${state.backend==='connected'?'Supabase project reachable. Authentication will use your connected project.':'Backend check pending/offline. Demo mode still works without interruption.'}</div>
     <button class="btn primary" onclick="submitAuth()">${authMode==='login'?'Sign in':'Create account'}</button>
-    <button class="btn" onclick="demoLogin(authRole);$('#authModal')?.remove()">Continue with demo ${authRole}</button>
+    <button class="btn" onclick="demoLogin(authRole);$('#authModal')?.remove()">${checkinMode?'Preview without GPS upload':'Continue with demo '+authRole}</button>
   </div>`;
 }
 function switchAuth(mode){authMode=mode;$('#authContent').innerHTML=authForm();$$('.auth-tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&mode==='login')||(i===1&&mode==='register')))}
@@ -186,12 +186,12 @@ async function submitAuth(){
     const data=authMode==='login'?await SB.signIn({email,password}):await SB.signUp({email,password,name,role:authRole});
     const user=data?.user || await SB.getUser();
     const role=user?.user_metadata?.role || authRole;
-    state.logged=true;state.role=role;state.page=defaultPage(role);state.account={name:user?.user_metadata?.name||name,email,provider:'supabase'};save();
+    state.logged=true;state.role=role;state.page=(checkinMode&&role==='attendee')?'map':defaultPage(role);state.account={name:user?.user_metadata?.name||name,email,provider:'supabase'};save();
     $('#authModal')?.remove();renderApp();toast('Connected to EventFlow',`Signed in as ${role}.`);hydrateFromSupabase();
   }catch(e){toast('Authentication failed',e.message||'Could not sign in to Supabase.');}
 }
 function demoLogin(role='organizer'){
-  state.logged=true;state.role=role;state.page=defaultPage(role);state.account={name:role==='organizer'?'Demo Controller':role==='operator'?'MetroLink Operations':'Demo Attendee',email:'demo@eventflow.local',provider:'demo'};save();renderApp();toast('Live demo ready',`${role[0].toUpperCase()+role.slice(1)} experience loaded.`);
+  state.logged=true;state.role=role;state.page=(checkinMode&&role==='attendee')?'map':defaultPage(role);state.account={name:role==='organizer'?'Demo Controller':role==='operator'?'MetroLink Operations':'Demo Attendee',email:'demo@eventflow.local',provider:'demo'};save();renderApp();toast('Live demo ready',`${role[0].toUpperCase()+role.slice(1)} experience loaded.`);
 }
 async function logout(){if(state.account.provider==='supabase')await SB.signOut();state.logged=false;save();renderApp();}
 function defaultPage(role){return role==='organizer'?'command':role==='operator'?'overview':'journey'}
@@ -235,32 +235,38 @@ function densityColor(v){return v>=90?'#ff6d78':v>=75?'#f2bd5c':v>=55?'#e5cf72':
 function halo(cx,cy,r,value){const c=densityColor(value);return `<circle class="crowd-halo" cx="${cx}" cy="${cy}" r="${r}" fill="${c}" opacity="${value>=90?.12:value>=75?.09:.055}"/><circle cx="${cx}" cy="${cy}" r="${r*.55}" fill="${c}" opacity="${value>=90?.12:.05}"/>`}
 function marker(id,x,y,value,label){const c=densityColor(value);return `<g class="map-marker" onclick="openMapDrawer('${id}')"><circle class="marker-ring" cx="${x}" cy="${y}" r="10" stroke="${c}"/><circle class="marker-core" cx="${x}" cy="${y}" r="6" fill="${c}"/><text x="${x+10}" y="${y-3}" class="map-label">${label}</text><text x="${x+10}" y="${y+8}" class="map-sub">${value}% load</text></g>`}
 function digitalTwinMarkup(attendee=false){
-  const n=state.gates.north,e=state.gates.east,p=state.occupancy.parking,t=state.occupancy.transport,v=state.occupancy.venue,h=state.occupancy.hotel;
-  return `<div class="digital-twin" id="digitalTwin">
-    <svg viewBox="0 0 960 530" preserveAspectRatio="xMidYMid slice" aria-label="EventFlow live event digital twin">
-      <defs><filter id="blur18"><feGaussianBlur stdDeviation="15"/></filter><linearGradient id="arenaFill" x1="0" x2="1"><stop stop-color="#10252d"/><stop offset="1" stop-color="#0f1b26"/></linearGradient></defs>
-      <rect width="960" height="530" fill="#071019"/>
-      <path class="district" d="M54 55 H300 V188 H54 Z"/><path class="district" d="M666 40 H918 V190 H666 Z"/><path class="district" d="M36 330 H287 V492 H36 Z"/><path class="district" d="M675 325 H930 V492 H675 Z"/>
-      <path class="road-base" d="M20 420 C160 400 245 334 333 294 S545 260 925 112"/><path class="road-base" d="M65 95 C210 148 295 145 405 225 S632 360 921 431"/><path class="road-base" d="M465 20 C455 155 453 315 470 510"/><path class="road-base" d="M40 270 C240 250 370 255 566 280 S790 300 940 260"/>
-      <path class="road-edge" d="M20 420 C160 400 245 334 333 294 S545 260 925 112"/><path class="road-edge" d="M65 95 C210 148 295 145 405 225 S632 360 921 431"/><path class="road-edge" d="M465 20 C455 155 453 315 470 510"/><path class="road-edge" d="M40 270 C240 250 370 255 566 280 S790 300 940 260"/>
-      ${!attendee?`<path class="route-line ${n>=90?'critical':n>=75?'warning':''}" d="M175 89 C270 130 320 160 397 217"/><path class="route-line" d="M799 105 C710 140 645 170 565 224"/><path class="route-line violet" d="M146 406 C245 368 293 328 365 289"/>`:`<path class="route-line" stroke-width="4" d="M804 105 C730 141 650 170 568 225"/>`}
-      ${halo(402,215,70,n)}${halo(568,228,60,e)}${halo(155,400,65,p)}${halo(795,105,54,t)}${halo(485,260,112,v)}
-      <g><rect class="building hotel" x="92" y="60" rx="8" width="126" height="78"/><rect class="building hotel" x="235" y="74" rx="8" width="76" height="50"/><text class="map-label" x="112" y="91">HOTEL CENTRAL</text><text class="map-sub" x="112" y="105">Hospitality Zone A</text></g>
-      <g><rect class="building accent" x="365" y="178" rx="18" width="220" height="156" fill="url(#arenaFill)"/><rect x="397" y="207" rx="12" width="155" height="97" fill="#0a161f" stroke="#2e5960"/><path d="M421 238 H527 M421 257 H527 M421 276 H527" stroke="#16313a"/><text class="map-label" x="430" y="250">UNITY ARENA</text><text class="map-sub" x="430" y="264">National Championship Final</text></g>
-      <g><rect class="building parking" x="80" y="360" rx="9" width="150" height="91"/><path d="M96 382H214M96 398H214M96 414H214M96 430H214" stroke="#314650" stroke-dasharray="4 6"/><text class="map-label" x="102" y="349">PARKING P2</text></g>
-      <g><rect class="building" x="746" y="64" rx="10" width="130" height="82"/><path d="M767 87H854M767 102H854M767 117H854" stroke="#29434f"/><text class="map-label" x="770" y="57">METRO EAST</text></g>
-      <g><rect class="building medical" x="735" y="376" rx="8" width="98" height="58"/><text class="map-label" x="750" y="404">MEDICAL</text></g>
-      <g><rect class="building" x="856" y="360" rx="8" width="58" height="80"/><text class="map-label" x="859" y="350">FOOD</text></g>
-      <g><rect class="building" x="272" y="388" rx="8" width="82" height="58"/><text class="map-label" x="285" y="416">PARK P4</text></g>
-      ${marker('north',405,178,n,'NORTH GATE')}${marker('east',585,238,e,'EAST GATE')}${marker('p2',160,359,p,'P2')}${marker('hotel',154,60,h,'HOTEL')}${marker('metro',806,145,t,'METRO')}${marker('arena',474,334,v,'ARENA')}
-      ${Array.from({length:28},(_,i)=>{let x=92+(i*83)%785,y=80+((i*59)%370),cls=(i%8===0&&n>=80)?'crit':(i%6===0?'warn':'');return `<circle class="attendee-dot ${cls}" cx="${x}" cy="${y}" r="1.8" opacity="${.5+(i%4)*.1}"><animate attributeName="opacity" values=".35;1;.35" dur="${2+(i%4)}s" repeatCount="indefinite"/></circle>`}).join('')}
-      <circle r="2.8" fill="#8cebe4"><animateMotion dur="8s" repeatCount="indefinite" path="M150 408 C250 360 310 315 390 285 S520 265 580 235"/></circle>
-      <circle r="2.8" fill="#8cebe4"><animateMotion dur="10s" begin="-3s" repeatCount="indefinite" path="M806 105 C720 135 655 170 575 225 S510 255 480 270"/></circle>
-      <circle r="2.7" fill="#9c8cff"><animateMotion dur="11s" begin="-6s" repeatCount="indefinite" path="M154 90 C240 130 300 170 385 220 S455 254 475 268"/></circle>
-    </svg>
-    <div class="map-float"><small>${attendee?'YOUR LIVE ROUTE':'PREDICTION WATCH'}</small><b>${attendee?`${state.attendeeRoute} · recommended`:`North Gate · ${state.crowdPrediction.probability}% risk`}</b><div class="density"><span>${attendee?'Crowd':'Current'}</span><strong>${attendee?state.gates[state.attendeeRoute.startsWith('East')?'east':'north']:state.gates.north}%</strong></div><div class="capacity-bar"><i style="width:${attendee?state.gates[state.attendeeRoute.startsWith('East')?'east':'north']:state.gates.north}%"></i></div></div>
-    <div class="map-legend"><span><i style="background:#58d89a"></i>Normal</span><span><i style="background:#e5cf72"></i>Moderate</span><span><i style="background:#f2bd5c"></i>Heavy</span><span><i style="background:#ff6d78"></i>Critical</span></div><div class="map-scale">1 km · simulated telemetry</div><div class="map-drawer" id="mapDrawer"></div>
+  const activeRoute=state.attendeeRoute||'North Gate';
+  return `<div class="google-map-shell">
+    <div class="gm-toolbar">
+      <div class="gm-live-copy"><span class="gm-pulse"></span><div><b>EventFlow Live Mobility Map</b><small id="gmStatus">Loading OpenStreetMap…</small></div></div>
+      <div class="gm-controls">
+        <button class="map-tool active" id="gmTrafficBtn" onclick="EventFlowFreeMap.toggleRoads()">Road map</button>
+        <button class="map-tool active" id="gmCrowdBtn" onclick="EventFlowFreeMap.toggleCrowd()">Live GPS crowd</button>
+        ${attendee?`<button class="map-tool" onclick="EventFlowFreeMap.useMyLocation()">Share live GPS</button><button class="map-tool" onclick="EventFlowFreeMap.findAlternateRoute()">Find alternate route</button>`:`<button class="map-tool" onclick="openCheckinQR()">Check-in QR</button>`}
+      </div>
+    </div>
+    <div class="gm-map-wrap">
+      <div id="eventMap" class="google-map" aria-label="EventFlow live OpenStreetMap mobility map"></div>
+      <div class="gm-overlay-card gm-left-card">
+        <small>${attendee?'YOUR JOURNEY':'LIVE CROWD NETWORK'}</small>
+        <b>${attendee?activeRoute:'Anonymous phone signals'}</b>
+        <span id="gmPhoneCount">Connecting GPS density…</span>
+        ${attendee?`<span>GPS accuracy <strong id="gmAccuracy">not connected</strong></span>`:`<span>Raw attendee GPS is not shown; organizer sees aggregated density.</span>`}
+      </div>
+      <div class="gm-overlay-card gm-right-card">
+        <small>ROUTING INTELLIGENCE</small>
+        <b>${attendee?'Road + crowd aware':'OpenStreetMap + EventFlow crowd'}</b>
+        <span>${attendee?'If your gate or approach is congested, EventFlow selects a lower-pressure gate and draws an alternate road route.':'Road geography comes from OpenStreetMap; live event pressure comes from opted-in attendee GPS.'}</span>
+      </div>
+    </div>
+    ${attendee?`<div class="gm-route-list" id="gmRouteList"><div class="gm-route-empty">Share GPS, then tap <b>Find alternate route</b>. EventFlow will combine live GPS crowd pressure with OpenStreetMap road routing and choose a lower-pressure gate.</div></div>`:''}
+    <div class="gm-privacy"><span>●</span> GPS is shared only after attendee permission. EventFlow uses short-lived, pseudonymous signals and aggregated crowd cells for the command map.</div>
   </div>`;
+}
+function openCheckinQR(){
+  const u=new URL(location.href);u.search='';u.hash='';u.searchParams.set('checkin','1');
+  openModal('Attendee Live GPS Check-in',`<div class="qr-layout"><div><div class="eyebrow">SCAN AT EVENT ENTRY</div><h3 style="font:700 18px Manrope;margin:8px 0">Join the live crowd network</h3><p class="muted" style="font-size:10px;line-height:1.7">Attendees scan this QR on their phone, open EventFlow, and explicitly allow location. Their exact coordinates are never displayed on the organizer map; only aggregate crowd density is shown.</p><div class="qr-link">${u.toString()}</div></div><div class="qr-box"><canvas id="checkinQr" width="210" height="210"></canvas></div></div>`);
+  requestAnimationFrame(()=>{const c=document.getElementById('checkinQr');if(c&&window.QRCode)QRCode.toCanvas(c,u.toString(),{width:210,margin:1},()=>{});});
 }
 function openMapDrawer(id){
   const l=mapLocations[id]; const d=$('#mapDrawer'); if(!l||!d)return; const v=l.density();
@@ -440,8 +446,14 @@ function drawCharts(){if(state.page==='crowd')drawLineCanvas('crowdChart',[state
 function renderContent(){
   const c=$('#content');if(!c)return;
   c.innerHTML=state.role==='organizer'?organizerPage(state.page):state.role==='operator'?operatorPage(state.page):attendeePage(state.page);
-  requestAnimationFrame(drawCharts);
+  requestAnimationFrame(()=>{
+    drawCharts();
+    if(document.getElementById('eventMap') && window.EventFlowFreeMap){
+      EventFlowFreeMap.mount({role:state.role,gateLoad:{...state.gates},venueLoad:state.occupancy.venue,recommendedGate:state.attendeeRoute});
+    }
+  });
 }
+window.EventFlowState=()=>state;
 function renderApp(){
   const app=$('#app');app.innerHTML=state.logged?shell():landing();if(state.logged){renderContent();renderTopStatus()}
 }
@@ -464,5 +476,20 @@ setInterval(()=>{
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();if(state.logged)openPalette()}});
 window.addEventListener('resize',()=>requestAnimationFrame(drawCharts));
 
+const checkinMode=new URLSearchParams(location.search).get('checkin')==='1';
+if(checkinMode){
+  authRole='attendee';
+  if(state.logged){state.role='attendee';state.page='map';save();}
+}
 renderApp();
+if(checkinMode){
+  setTimeout(()=>{
+    if(!state.logged){
+      openAuth('login');
+      toast('Attendee GPS check-in','Sign in or create an attendee account, then allow live location. Demo login can preview the UI but does not upload GPS to Supabase.');
+    } else {
+      toast('GPS check-in ready','Tap Share live GPS and allow location permission. Your signal will join the anonymous crowd layer when a Supabase session is active.');
+    }
+  },350);
+}
 checkBackend();

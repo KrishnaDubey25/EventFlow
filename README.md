@@ -1,70 +1,59 @@
-# EventFlow — Premium Mega-Event Orchestration Demo
+# EventFlow — Free Maps + Live GPS Crowd Routing
 
-This is a dependency-free frontend demo that can be opened directly in a browser and is already configured for the supplied Supabase project using a **publishable** browser key.
+This build removes Google Maps and all Google Maps API key requirements.
 
-## Fastest run
+## Stack
 
-1. Extract the ZIP.
-2. Open `index.html` in Chrome/Edge/Safari.
-3. Click **Launch demo** for the full seeded hackathon experience.
+- **MapLibre GL JS** — interactive browser map, no Google key.
+- **OpenStreetMap raster tiles** — road/base geography.
+- **Browser Geolocation API** — attendee live GPS after explicit permission.
+- **Supabase** — authentication + latest attendee GPS rows + aggregate crowd RPC.
+- **Public OSRM demo router** — key-free road route and alternative-route demo.
+- **EventFlow crowd logic** — combines gate pressure with opted-in GPS density and recommends a lower-pressure gate.
 
-For a cleaner local origin, macOS users can also run:
+## Important privacy behavior
+
+Attendee GPS is collected only after the attendee taps **Share live GPS** and the browser grants permission. Raw attendee locations are protected by RLS. The organizer map reads only rounded, short-lived aggregate cells through `get_crowd_cells()`.
+
+## Supabase setup
+
+1. Open your Supabase project.
+2. Go to **SQL Editor**.
+3. Run all of `supabase-schema.sql` once.
+4. For real cross-device GPS, create/sign in with an attendee account before sharing location.
+
+Your supplied Supabase project URL + publishable key are already in `config.js`.
+
+Never put a `service_role` key, JWT secret, or database password in this frontend.
+
+## Run locally
+
+Because browser geolocation requires a secure context, use localhost rather than opening the file directly:
 
 ```bash
-cd EventFlow-Premium
+cd EventFlow-FreeMaps-GPS
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`.
+Open `http://localhost:8080` on the same computer.
 
-## Enable persistent Supabase tables
+For a phone GPS demo, deploy the folder to an HTTPS host (for example Vercel/Netlify/GitHub Pages) and scan the organizer's **Check-in QR** from the phone. Modern mobile browsers require HTTPS for geolocation.
 
-The publishable key can authenticate browser users, but it cannot create database tables. To enable persistent EventFlow records:
+## Demo flow
 
-1. Open Supabase Dashboard.
-2. Open **SQL Editor**.
-3. Paste and run `supabase-schema.sql` once.
-4. Reload EventFlow and create/sign into a Supabase account.
+1. Organizer → Live Map → **Check-in QR**.
+2. Attendee scans QR on phone.
+3. Attendee signs in/registers with Supabase if needed.
+4. Tap **Share live GPS** and allow location permission.
+5. Organizer sees aggregate live crowd circles on the MapLibre/OpenStreetMap map.
+6. Trigger **Crowd Surge** or gather multiple GPS signals near a gate.
+7. Attendee taps **Find alternate route**.
+8. EventFlow scores gates using crowd pressure + distance, selects a lower-pressure gate, then requests up to 3 road alternatives from the key-free OSRM demo router.
 
-The app automatically falls back to seeded live demo data if the tables are not installed or network access is unavailable.
+## No paid map key
 
-## Best hackathon demo flow
+There is no `GOOGLE_MAPS_API_KEY` and no Google Maps dependency in this build.
 
-1. Enter **Organizer / Command Center**.
-2. Click **Crowd Surge**.
-3. Open **AI Actions** and approve:
-   - Redirect 700 attendees
-   - Deploy 3 additional shuttles
-   - Open Parking P4 overflow
-4. Switch to **Operator** from the bottom-left role switch.
-5. Open **Assignments** and accept/complete the new shuttle task.
-6. Switch to **Attendee**.
-7. Show the route changed to **East Gate**, updated shuttle guidance, and the simplified smart map.
-8. Return to Organizer and show the improved EventFlow Coordination Score.
+### Demo-service note
 
-## Files
-
-- `index.html` — app entry point
-- `styles.css` — complete premium UI system
-- `app.js` — dashboards, digital twin, simulations and cross-role state
-- `supabase.js` — Supabase Auth/REST client with local demo fallback
-- `config.js` — Supabase project URL + publishable key
-- `supabase-schema.sql` — tables, seed data and RLS policies
-
-## GitHub push
-
-```bash
-cd EventFlow-Premium
-git init
-git branch -M main
-git remote add origin https://github.com/KrishnaDubey25/EventFlow.git
-git add .
-git commit -m "Rebuild EventFlow premium orchestration platform"
-git push -u origin main --force
-```
-
-Only use `--force` if you intentionally want this rebuilt version to replace the current repository branch history. If you want to keep existing history, clone the repository first and copy these files into it, then commit normally.
-
-## Security note
-
-The included key is a Supabase **publishable** key intended for browser/client use. Never add a Supabase secret/service-role key, database password, or other server secret to this frontend or a public GitHub repository.
+The standard OpenStreetMap tile server and public OSRM router are community/demo infrastructure, not production SLA services. They are appropriate for a hackathon demo with light traffic. For a production deployment, self-host tiles/routing or use a provider that gives you an SLA and usage allowance.
