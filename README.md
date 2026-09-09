@@ -1,24 +1,30 @@
-# EventFlow — 3D Premium Demo
+# EventFlow — End-to-End Premium Demo
 
-A browser-first EventFlow prototype with three roles:
+EventFlow is an original hackathon prototype for end-to-end event guidance and operations.
 
-- Event Management
-- Operator
-- Attendee
+## What is included
 
-## Important design choices
+- Premium landing page with no map
+- Live event cards first
+- Three roles: Attendee, Operator, Event Management
+- Local browser sign-in/sign-up (`localStorage`), no database
+- Live / Upcoming / Completed event lists with unique Event IDs
+- Attendee ticket number → pass → happening now → full journey → food/stay/help → 3D guide
+- Short events skip mandatory stay; long or multi-day events include stay planning
+- Operator event assignments, detailed jobs, work steps, work location and 3D work map
+- Management views for guests, travel, gates, parking, food, hotels, staff, mobile assets, messages, tasks and reports
+- 3D MapLibre/OpenFreeMap map only where a map is useful
+- Built-in local 3D venue fallback so a failed tile request never leaves a blank map
 
-- No map on the public landing page.
-- Live demo events are shown before login.
-- Accounts and demo state run locally in the browser using localStorage.
-- No Supabase, database, API key or environment file is required.
-- 3D maps only appear inside attendee / operator / management workflows where a map is useful.
-- 3D maps use MapLibre GL JS with OpenFreeMap / OpenStreetMap map data. No Google Maps API key is required.
-- If map tiles cannot load, EventFlow shows a clean offline fallback instead of breaking the page.
+## Map stack
+
+The map uses MapLibre GL JS 5.24.0 and OpenFreeMap vector maps. No Google Maps key is required.
+
+The previous prototype attempted to load a MapLibre v6 browser build using the old v5 UMD file path. This build pins a compatible v5 browser script and uses OpenFreeMap's documented `liberty` style.
 
 ## Run
 
-You can double-click `index.html`, but for the best browser behavior use a local server:
+You can open `index.html` directly, but a local web server is better:
 
 ```bash
 python3 -m http.server 8080
@@ -28,15 +34,6 @@ Then open:
 
 `http://localhost:8080`
 
-## Demo flow
-
-1. Open the landing page.
-2. Pick one of the four demo live events.
-3. Choose Attendee, Operator or Event Management.
-4. Attendee: enter a ticket number (or use Demo Pass), choose what you want to do now, then press **Go there** to open the 3D map and route.
-5. Operator: pick a live event, open tasks, use **Show on 3D map**, and update task status.
-6. Management: open a live event, see the event health overview, crowd, travel, hotels, tasks and 3D operations map.
-
 ## Demo accounts
 
 Password for all demo accounts: `event123`
@@ -45,4 +42,6 @@ Password for all demo accounts: `event123`
 - Operator: `operator@eventflow.demo`
 - Attendee: `attendee@eventflow.demo`
 
-The accounts are seeded into localStorage when the app first runs.
+## Product research note
+
+The event operations design was informed by publicly described crowd-management capabilities such as visitor-flow analysis, arrival/departure analysis, location-based messaging, operations management and engagement analysis. EventFlow is an original prototype and is not affiliated with or endorsed by PwC.
