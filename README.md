@@ -1,50 +1,29 @@
-# EventFlow — LiveOps RealMap Upgrade
+# EventFlow LiveOps RealMap
 
-This is an **upgrade of the existing EventFlow-LiveOps-RealMap build**, not a fresh replacement project.
+A static, no-database hackathon demo of an end-to-end event operating system.
 
-## Preserved
-- Landing page and local authentication
-- Event selection
-- Management / Operator / Attendee roles
-- Shared local live event state
-- Crowd, gates, parking, transport and hospitality monitoring
-- Operator actions and same-browser sync
-- Existing live road map and routing behavior
-
-## Added in this upgrade
-- White-first premium EventFlow visual identity
-- Organizer Command Center with Event Health, attendance, alerts, operators and resource utilization
-- Live Digital Map with toggle layers: Crowd, Gates, Transport, Parking, Hospitality, Food, Medical, Security, Alerts, Operators, Resources
-- Venue boundary, gates, parking, pickup, shuttle, transport, food, hotel, medical, security, toilets, emergency, restricted and operator locations
-- Clickable map objects with status, severity, handler and EventFlow recommendation
-- Live Event Feed with animated incoming activity
-- Five demo scenarios: Normal, Gate Congestion, Parking Crisis, Transport Surge, Event Exit
-- AI prediction + ripple impact + Accept / Modify / Dismiss / Deploy Resource controls
-- Gate congestion demo chain: detect → recommend → organizer approve → operator task → operator activation → attendee redistribution → measured impact
-- Personalized attendee gate assignment using ticket/session seed and live capacity
-- My Journey with walk time, ETA, security and backup route
-- Plan My Exit with distributed exits, pickup, metro, shuttle and parking guidance
-- Impact Monitor with before/after crowd and event health
-- Event Summary
-- Expanded operator assignments and resource controls
-- Gradual simulated changes to crowd-related services and live activity
+## What is new
+- Premium landing page with no map.
+- Sign in -> main event list with Live / Upcoming / Completed filters.
+- Attendee ticket -> live program -> food/parking/stay/transport -> real road navigation.
+- MapLibre + OpenFreeMap/OpenStreetMap real vector map (no Google Maps key).
+- OSRM road routing with turn steps and alternatives when the public service is reachable.
+- Live gate crowd overlays, parking markers, food/status markers, medical, transit, hotel.
+- Operator can open/close gates, add lines, free parking, mark food free and deploy shuttles.
+- LocalStorage + BroadcastChannel syncs those demo operations across tabs in the same browser.
 
 ## Demo accounts
-Password for all demo accounts: `event123`
+- attendee@eventflow.demo / event123
+- operator@eventflow.demo / event123
+- manager@eventflow.demo / event123
 
-- Attendee: `attendee@eventflow.demo`
-- Operator: `operator@eventflow.demo`
-- Management: `manager@eventflow.demo`
+## Run locally
+```bash
+python3 -m http.server 8080
+```
+Open http://localhost:8080
 
-## Best judge demo
-1. Sign in as Management.
-2. Open the live cricket event.
-3. Select **Gate Congestion** scenario.
-4. Open **AI Intelligence** and Accept the recommendation.
-5. Sign in / switch to Operator in another tab and open **Assignments**.
-6. Activate & complete the Gate 4 task.
-7. Open Attendee view: ticket-based routing now distributes guests across available gates.
-8. Return to Management → **Impact Monitor** to show Gate 2 pressure reduction.
-
-## Map
-The road map uses MapLibre GL JS + OpenFreeMap. Internet is needed for external road-map tiles and OSRM routing. EventFlow operations and activity panels remain usable if tiles/routing are unavailable.
+## Notes
+- External road map tiles and road routing require an internet connection in the browser.
+- Crowd/operations values are demo simulation data, not real-world telemetry.
+- Browser geolocation requires the user's permission and works on HTTPS (Vercel) or localhost.
