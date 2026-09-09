@@ -42,3 +42,6 @@ Then open http://localhost:8080
 - OSRM routing also requires internet access.
 - If you prefer an external navigator, every route includes an **Open in Google Maps** link.
 - Demo contact phone numbers are fictional placeholders.
+
+## Map fix
+Organizer and Hospitality maps now include direct open buttons, a more reliable MapLibre CDN loader, and a built-in visible fallback map so the map area never stays blank.

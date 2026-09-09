@@ -36,3 +36,30 @@ body{background:radial-gradient(circle at 8% 8%,#fff2ec 0,transparent 28%),radia
 .icon-btn{background:#fff;border-color:#ead9d1}.icon-btn:hover{background:#fff4ef}
 @media(max-width:760px){.room-grid{grid-template-columns:1fr}.map-legend{top:84px;left:12px;right:12px;border-radius:14px}.live-update-hero{align-items:flex-start}.support-card{padding:20px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Hospitality clarity refresh */
+.hospitality-hero{max-width:760px}
+.hospitality-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:22px}
+.hospitality-main-card{appearance:none;border:1px solid rgba(35,26,47,.09);background:linear-gradient(145deg,#fff 0%,#fffaf7 100%);border-radius:28px;padding:22px;text-align:left;display:flex;flex-direction:column;gap:18px;min-height:290px;cursor:pointer;transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;box-shadow:0 14px 40px rgba(48,32,62,.08)}
+.hospitality-main-card:hover{transform:translateY(-6px);box-shadow:0 22px 54px rgba(48,32,62,.14);border-color:rgba(124,58,237,.2)}
+.hospitality-main-card.transport{background:linear-gradient(145deg,#fff,#fff5ee)}
+.hospitality-main-card.hotel{background:linear-gradient(145deg,#fff,#fbf7ff)}
+.hospitality-main-card.event{background:linear-gradient(145deg,#fff,#f4fff9)}
+.hospitality-card-icon{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:24px;font-weight:800;background:#19151f;color:#fff;box-shadow:0 10px 24px rgba(25,21,31,.15)}
+.hospitality-main-card.transport .hospitality-card-icon{background:#ef6b43}
+.hospitality-main-card.hotel .hospitality-card-icon{background:#7c3aed}
+.hospitality-main-card.event .hospitality-card-icon{background:#168a5b}
+.hospitality-card-copy span{display:block;font-size:11px;letter-spacing:.14em;font-weight:800;color:#7a6c80;margin-bottom:8px}
+.hospitality-card-copy h3{font-size:22px;line-height:1.12;margin:0 0 10px;color:#1f1824}
+.hospitality-card-copy p{margin:0;color:#716775;line-height:1.6}
+.hospitality-card-foot{margin-top:auto;padding-top:15px;border-top:1px solid rgba(35,26,47,.08);display:grid;grid-template-columns:auto 1fr auto;align-items:end;gap:8px}
+.hospitality-card-foot strong{font-size:24px;color:#211925}.hospitality-card-foot span{font-size:12px;color:#7c7080}.hospitality-card-foot b{font-size:13px;color:#3c3140}
+.hospitality-lower{margin-top:18px}.hospitality-contact-card{display:flex;flex-direction:column;justify-content:space-between;gap:18px}.contact-strip{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:16px;background:#f8f4f0;border:1px solid rgba(35,26,47,.08)}.contact-strip span{font-size:12px;color:#7d707d}.contact-strip strong{font-size:16px;color:#211925}
+@media(max-width:980px){.hospitality-card-grid{grid-template-columns:1fr 1fr}.hospitality-main-card.event{grid-column:1/-1}}
+@media(max-width:640px){.hospitality-card-grid{grid-template-columns:1fr}.hospitality-main-card.event{grid-column:auto}.hospitality-main-card{min-height:0}.hospitality-card-foot{grid-template-columns:auto 1fr}.hospitality-card-foot b{grid-column:1/-1;margin-top:4px}}
+
+
+/* Organizer + Hospitality map reliability patch */
+.ops-map-fallback{position:absolute;inset:0;overflow:hidden;background:linear-gradient(135deg,#f3ebe6,#fbfaf7 50%,#eee8f8);min-height:100%}.fallback-road{position:absolute;background:#fff;border:1px solid #ded4ce;box-shadow:0 0 0 7px rgba(255,255,255,.38);border-radius:999px}.fallback-road.r1{width:120%;height:34px;left:-10%;top:47%;transform:rotate(-11deg)}.fallback-road.r2{width:82%;height:30px;left:22%;top:30%;transform:rotate(48deg)}.fallback-road.r3{width:74%;height:26px;left:-9%;top:71%;transform:rotate(19deg)}.fallback-route{position:absolute;width:58%;height:8px;left:19%;top:54%;background:linear-gradient(90deg,#7c3aed,#ff6b57);border-radius:999px;transform:rotate(-10deg);box-shadow:0 0 0 4px rgba(255,255,255,.75)}.fallback-arrow{position:absolute;right:-8px;top:-18px;width:42px;height:42px;border-radius:50%;background:#211f1e;color:#fff;display:grid;place-items:center;font-size:20px;transform:rotate(10deg)}.fallback-pin{position:absolute;z-index:3;padding:7px 10px;background:#fff;border:1px solid #d9cec8;border-radius:999px;font-size:9px;font-weight:900;box-shadow:0 8px 24px rgba(46,34,29,.15)}.fallback-pin.start{left:16%;bottom:24%}.fallback-pin.gate{right:17%;top:29%}.fallback-crowd{position:absolute;z-index:2;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:900;border:1px solid rgba(255,255,255,.85)}.fallback-crowd.hot{left:47%;top:22%;background:rgba(239,91,91,.26);color:#b52f2f;box-shadow:0 0 0 22px rgba(239,91,91,.10)}.fallback-crowd.safe{right:17%;top:43%;background:rgba(35,163,109,.23);color:#187b53;box-shadow:0 0 0 16px rgba(35,163,109,.09)}.fallback-map-copy{position:absolute;left:16px;right:16px;bottom:16px;max-width:460px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:16px;padding:13px 15px;box-shadow:0 12px 30px rgba(46,34,29,.12);z-index:4}.fallback-map-copy b,.fallback-map-copy span,.fallback-map-copy a{display:block}.fallback-map-copy b{font-size:13px}.fallback-map-copy span{font-size:10px;color:var(--muted);margin:4px 0 8px}.fallback-map-copy a{font-size:10px;color:var(--violet);font-weight:900;text-decoration:none}.hospitality-contact-card .action-row{margin-top:14px}.hospitality-contact-card .action-row .btn{flex:1}
+.map-fallback{z-index:4}
