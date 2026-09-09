@@ -1,41 +1,44 @@
-# EventFlow — White Premium Rebuild
+# EventFlow — White Premium Rebuild (Edited)
 
-A fresh EventFlow demo rebuild focused on a clean white premium UI (no blue), simple English, clear navigation, detailed parking/food/stay flows, operator missions and management control.
+This is the edited version of the existing White Premium Rebuild, not a separate redesign.
+
+## Roles
+- Attendee
+- Hospitality
+- Organizer
+
+## Added in this edit
+- Stronger white premium visual contrast with coral, violet, green and amber accents (no blue theme)
+- More motion, hover feedback, live pulse and polished cards
+- Attendee Live Updates page and notification feed
+- Help & Support page with demo contacts and map shortcuts
+- More colorful MapLibre/OpenFreeMap road map (`liberty` style)
+- Cleaner crowd markers and crowd legend
+- Turn-by-turn road routing using OSRM when available
+- Google Maps fallback link for every selected destination
+- Operator renamed to Hospitality
+- Hospitality overview, tasks, transport/fleet capacity, hotels & rooms, housekeeping, live services and work map
+- Hotel room cleaning actions
+- Transport capacity/task flow
+- Management renamed to Organizer
+- Organizer can edit event start/end timing and event phase
+- Organizer can assign new tasks to Hospitality teams
+- Hospitality actions update Attendee and Organizer live state in the same browser via localStorage/BroadcastChannel
+
+## Demo mode
+No backend or database is required. Data is stored locally in the browser.
 
 ## Run
-
-Open `index.html` directly, or preferably:
+Open `index.html`, or serve the folder locally:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`.
+Then open http://localhost:8080
 
-## Demo accounts
-
-Use **Use demo account** after selecting a role.
-
-- Attendee
-- Operator
-- Management
-
-No database or API key is required. Accounts and live demo state use browser localStorage. Operator changes sync across tabs with BroadcastChannel where supported.
-
-## Map
-
-The navigation screen uses MapLibre + OpenFreeMap for the road map and tries OSRM public routing for route geometry/turn steps. If map tiles or routing are blocked, the route instructions and event status panels still remain usable.
-
-## Main improvements
-
-- White premium theme with coral, violet and green accents; no blue UI theme.
-- Landing page has no map.
-- Sign in -> event list -> Live / Upcoming / Completed -> event-specific flow.
-- Attendee ticket -> live schedule -> choose destination -> navigation.
-- Specific food stalls with wait time and Go There buttons.
-- Car/bike parking with free-space counts and road restrictions.
-- Stay/hotel cards with price, rooms, shuttle and demo contact numbers.
-- Operator tasks for gate, cleaning, parking, lighting and health issues.
-- Operator service controls update guest/management status locally.
-- Management control room with guests, gates, food, parking, travel, stay, teams and jobs.
-- Navigation shows turn card, ETA, distance, route steps, crowd status and nearby live services.
+## Notes
+- The road map requires internet access to load OpenFreeMap tiles.
+- OSRM routing also requires internet access.
+- If you prefer an external navigator, every route includes an **Open in Google Maps** link.
+- Demo contact phone numbers are fictional placeholders.
