@@ -1,220 +1,409 @@
 (() => {
   'use strict';
+  const app = document.getElementById('app');
+  const toastHost = document.getElementById('toast');
+  const STORE = {
+    users:'eventflow_true_users_v1',
+    session:'eventflow_true_session_v1',
+    tasks:'eventflow_true_tasks_v1',
+    ticket:'eventflow_true_ticket_v1'
+  };
+  const N = () => new Date();
+  const plusMin = (d,m) => new Date(d.getTime()+m*60000);
+  const seed = N();
+  const iso = d => d.toISOString();
+  const fmtTime = v => new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(v));
+  const fmtDate = v => new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(v));
+  const fmtDateShort = v => new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short'}).format(new Date(v));
+  const read = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+  const write = (k,v) => localStorage.setItem(k,JSON.stringify(v));
 
-  const $ = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => [...r.querySelectorAll(s)];
-  const app = $('#app');
-  const toastHost = $('#toastHost');
-  const DB = {users:'eventflow_e2e_users_v1',session:'eventflow_e2e_session_v1',tasks:'eventflow_e2e_tasks_v1'};
-  const C = {violet:'#735cff',teal:'#18b9aa',coral:'#ff7358',amber:'#e8a327',green:'#1fa66f',red:'#df4f62',cyan:'#57c7ff'};
+  function schedule(base, rows){
+    return rows.map(r=>({title:r[0],place:r[1],detail:r[2],start:iso(plusMin(base,r[3])),end:iso(plusMin(base,r[4]))}));
+  }
 
   const EVENTS = [
     {
-      id:'cricket', eventId:'EF-MUM-CR-260909', status:'live', type:'Cricket', name:'India vs Pakistan — Championship Night', venue:'Harbour Arena', city:'Mumbai',
-      date:'09 Sep 2026', time:'6:30 PM – 11:00 PM', duration:4.5, expected:52000, inside:42860, health:88, color:C.violet, center:[72.8258,18.9388],
-      phase:'Second innings is live', next:'Food court rush expected at 8:35 PM', mainPlace:'Block C12', crowd:{north:91,east:48,south:64,west:72},
-      travel:{metro:38,car:26,shuttle:18,taxi:11,walk:7}, arrivals:'2,460 in next 30 min', exits:'Low right now', parking:[['P1',96],['P2',78],['P3',51],['P4',34]],
-      hotels:[['Harbour Stay','1.3 km',42,'₹3,800'],['City Grand','2.1 km',18,'₹4,600'],['Metro Rooms','2.7 km',64,'₹2,900']],
-      food:[['North Food Court',84,'18 min'],['East Food Street',49,'7 min'],['South Snacks',63,'10 min'],['VIP Lounge',38,'4 min']],
-      schedule:[['5:15 PM','Travel window opens','done'],['6:00 PM','Gates open','done'],['6:30 PM','Match starts','done'],['8:20 PM','Second innings','live'],['8:35 PM','Food rush expected','next'],['10:35 PM','Exit plan starts','next'],['11:00 PM','Event ends','next']],
-      engagement:[['Main stands',84],['Fan zone',67],['Food areas',73],['Sponsor zone',41]], multiDay:false
+      id:'indpak', eventId:'EF-MUM-CR-091', category:'Cricket',
+      name:'India vs Pakistan — Championship Night', venue:'Harbour Arena', city:'Mumbai',
+      start:iso(plusMin(seed,-85)), end:iso(plusMin(seed,210)),
+      expected:58420, inside:43180, capacity:60000, health:88,
+      entry:'East Gate', exit:'South Gate', place:'Block C12 · Row J · Seat 18',
+      stayNeeded:false,
+      gates:{North:93,East:46,South:62,West:71},
+      parking:[
+        {name:'P1 North',total:1200,used:1175,walk:'15 min',road:'North Service Road',note:'Almost full'},
+        {name:'P2 West',total:1600,used:1280,walk:'11 min',road:'West Link Road',note:'Medium traffic'},
+        {name:'P3 East',total:2200,used:1430,walk:'8 min',road:'East Access Road',note:'Best option'},
+        {name:'P4 Overflow',total:1800,used:610,walk:'17 min',road:'Third Road',note:'No roadside parking'}
+      ],
+      food:[
+        {name:'North Food Court',crowd:91,wait:'20 min',status:'Very busy'},
+        {name:'East Food Street',crowd:43,wait:'6 min',status:'Best now'},
+        {name:'South Snacks',crowd:66,wait:'11 min',status:'Medium'},
+        {name:'Fan Store',crowd:31,wait:'3 min',status:'Easy'}
+      ],
+      hotels:[
+        {name:'Harbour Stay',distance:'1.3 km',rooms:42,price:'₹3,800',travel:'Shuttle 20 min'},
+        {name:'City Grand',distance:'2.1 km',rooms:18,price:'₹4,600',travel:'Shuttle 30 min'},
+        {name:'Metro Rooms',distance:'2.7 km',rooms:64,price:'₹2,900',travel:'Metro + walk'}
+      ],
+      transport:[
+        {name:'Metro East',load:58,next:'Next in 7 min',detail:'Last metro 12:35 AM'},
+        {name:'Shuttle S3',load:47,next:'Next in 4 min',detail:'Every 8 min'},
+        {name:'Taxi East',load:72,next:'9 min pickup',detail:'Busy'},
+        {name:'North Road',load:94,next:'+14 min',detail:'Avoid now'}
+      ],
+      schedule:schedule(seed,[
+        ['Gates open','All gates','Ticket checks and entry lines are active.',-85,-60],
+        ['Opening ceremony','Main stadium','Teams enter and crowd settles inside.',-60,-35],
+        ['First innings','Main stadium','Match is live. Food demand is medium.',-35,55],
+        ['Innings break','Food + washrooms','Highest food and washroom demand.',55,75],
+        ['Second innings','Main stadium','Match continues. Exit planning starts.',75,165],
+        ['Final overs','Main stadium','Final phase. Exit routes are prepared.',165,210],
+        ['Managed exit','Exits + transport','Guests split across metro, parking and pickups.',210,260]
+      ])
     },
     {
-      id:'concert', eventId:'EF-MUM-MU-260909', status:'live', type:'Music', name:'Pulse Arena Live', venue:'Central Grounds', city:'Mumbai',
-      date:'09 Sep 2026', time:'7:00 PM – 11:30 PM', duration:4.5, expected:36000, inside:31420, health:84, color:C.coral, center:[72.8555,19.0588],
-      phase:'Headline show is live on Stage A', next:'Acoustic set starts at 9:10 PM', mainPlace:'Stage A', crowd:{north:62,east:44,south:87,west:58},
-      travel:{metro:44,car:18,shuttle:20,taxi:12,walk:6}, arrivals:'1,920 in next 30 min', exits:'Low right now', parking:[['P1',74],['P2',92],['P3',45],['P4',39]],
-      hotels:[['Central Inn','0.9 km',25,'₹3,200'],['Metro Suites','1.8 km',49,'₹4,200'],['Park View','2.4 km',71,'₹2,700']],
-      food:[['Stage A Food','79','15 min'],['East Eats','41','6 min'],['South Drinks','58','8 min'],['Quiet Cafe','29','3 min']],
-      schedule:[['5:30 PM','Travel window opens','done'],['6:15 PM','Gates open','done'],['7:00 PM','Opening act','done'],['8:10 PM','Headline show','live'],['9:10 PM','Acoustic set','next'],['10:55 PM','Exit guidance starts','next'],['11:30 PM','Event ends','next']],
-      engagement:[['Stage A',92],['Stage B',54],['Food street',69],['Photo zone',46]], multiDay:false
+      id:'pulse', eventId:'EF-MUM-MU-146', category:'Concert',
+      name:'Pulse Arena Live', venue:'Central Grounds', city:'Mumbai',
+      start:iso(plusMin(seed,-20)), end:iso(plusMin(seed,250)), expected:36000, inside:28150, capacity:40000, health:84,
+      entry:'West Gate',exit:'East Gate',place:'Stage A · Zone B',stayNeeded:false,
+      gates:{North:59,East:45,South:88,West:52},
+      parking:[{name:'P1 North',total:900,used:650,walk:'13 min',road:'North Road',note:'Good'}, {name:'P2 South',total:1300,used:1190,walk:'7 min',road:'South Road',note:'Very busy'}, {name:'P3 East',total:1800,used:810,walk:'9 min',road:'East Link',note:'Best option'}],
+      food:[{name:'Stage A Food',crowd:82,wait:'16 min',status:'Busy'},{name:'East Eats',crowd:39,wait:'5 min',status:'Best now'},{name:'Merch Store',crowd:35,wait:'4 min',status:'Easy'}],
+      hotels:[{name:'Central Inn',distance:'0.9 km',rooms:25,price:'₹3,200',travel:'20 min loop'},{name:'Metro Suites',distance:'1.8 km',rooms:49,price:'₹4,200',travel:'Metro link'}],
+      transport:[{name:'Metro Central',load:64,next:'Next in 5 min',detail:'Last metro 12:20 AM'},{name:'Shuttle C2',load:53,next:'Next in 6 min',detail:'Every 10 min'},{name:'South Road',load:92,next:'+16 min',detail:'Avoid now'}],
+      schedule:schedule(seed,[['Main gates open','East, West, North','General and premium lines are open.',-20,5],['Opening act','Stage B','Opening performance is live.',5,55],['Headline show','Stage A','Main performance is live.',55,175],['Acoustic set','Stage B','Crowd moves toward Stage B.',175,205],['Final set','Stage A','Final performance and exit messaging.',205,250],['Exit & pickup','East pickup + Metro','Guests move to pickup and metro.',250,300]])
     },
     {
-      id:'expo', eventId:'EF-MUM-EX-260909', status:'live', type:'Technology Expo', name:'Future Tech Expo 2026', venue:'Innovation Hall', city:'Mumbai',
-      date:'09–10 Sep 2026', time:'10:00 AM – 8:00 PM', duration:10, expected:26000, inside:18760, health:93, color:C.teal, center:[72.8562,19.1170],
-      phase:'Robotics demos are running in Hall 2', next:'AI showcase starts at 5:20 PM', mainPlace:'Hall 2', crowd:{north:38,east:55,south:49,west:31},
-      travel:{metro:52,car:19,shuttle:12,taxi:9,walk:8}, arrivals:'860 in next 30 min', exits:'Steady', parking:[['P1',46],['P2',53],['P3',38],['P4',29]],
-      hotels:[['Expo Residency','0.7 km',36,'₹3,400'],['Tech Park Hotel','1.2 km',52,'₹4,100'],['Metro Lodge','2.3 km',74,'₹2,500']],
-      food:[['Hall 1 Cafe',61,'9 min'],['Hall 2 Cafe',77,'14 min'],['Startup Food Bay',44,'6 min'],['Outdoor Food',31,'4 min']],
-      schedule:[['8:30 AM','Travel window opens','done'],['9:30 AM','Entry starts','done'],['10:00 AM','Expo opens','done'],['3:40 PM','Robotics demos','live'],['5:20 PM','AI showcase','next'],['7:15 PM','Closing sessions','next'],['8:00 PM','Day closes','next']],
-      engagement:[['Robotics Hall',79],['AI Zone',71],['Startup Zone',58],['Career Hub',43]], multiDay:true
+      id:'expo', eventId:'EF-MUM-EX-228', category:'Expo',
+      name:'Future Tech Expo 2026', venue:'Innovation Hall', city:'Mumbai',
+      start:iso(plusMin(seed,80)), end:iso(plusMin(seed,530)), expected:26000, inside:0, capacity:32000, health:95,
+      entry:'North Gate',exit:'West Gate',place:'Hall 2 · Robotics',stayNeeded:true,
+      gates:{North:32,East:44,South:39,West:28},
+      parking:[{name:'P1 Hall',total:900,used:280,walk:'5 min',road:'Innovation Road',note:'Good'},{name:'P2 Metro',total:800,used:320,walk:'9 min',road:'Metro Link',note:'Good'},{name:'P3 East',total:1400,used:400,walk:'8 min',road:'East Road',note:'Best for Hall 2'}],
+      food:[{name:'Hall 1 Cafe',crowd:34,wait:'4 min',status:'Easy'},{name:'Hall 2 Cafe',crowd:51,wait:'7 min',status:'Medium'},{name:'Partner Store',crowd:22,wait:'2 min',status:'Easy'}],
+      hotels:[{name:'Tech Residency',distance:'0.7 km',rooms:84,price:'₹3,100',travel:'Walkable'},{name:'Innovation Suites',distance:'1.4 km',rooms:57,price:'₹4,300',travel:'Shuttle 20 min'},{name:'Metro Stay',distance:'2.0 km',rooms:112,price:'₹2,800',travel:'Metro link'}],
+      transport:[{name:'Metro Tech Park',load:40,next:'Next in 8 min',detail:'Last metro 11:55 PM'},{name:'Shuttle E1',load:31,next:'Next in 7 min',detail:'Every 12 min'},{name:'East Road',load:36,next:'Normal',detail:'Good'}],
+      schedule:schedule(seed,[['Entry opens','Registration','Badge scans and registration.',80,110],['Expo opens','All halls','All exhibit halls are active.',110,230],['Demo sessions','Hall 1 + Hall 2','Startup and robotics demos.',230,360],['AI showcase','Main Theatre','Main showcase session.',360,450],['Networking','Partner lounge','Meet companies and speakers.',450,510],['Closing','All halls','Final sessions and guest exit.',510,530]])
     },
     {
-      id:'festival', eventId:'EF-MUM-FD-260909', status:'live', type:'Food & Culture', name:'City Food & Culture Fest', venue:'Riverside Park', city:'Mumbai',
-      date:'09 Sep 2026', time:'4:00 PM – 10:30 PM', duration:6.5, expected:30000, inside:24190, health:90, color:C.amber, center:[72.8190,18.9823],
-      phase:'Live kitchen and folk stage are open', next:'Night parade starts at 8:45 PM', mainPlace:'Food Street', crowd:{north:47,east:66,south:41,west:74},
-      travel:{metro:31,car:28,shuttle:17,taxi:14,walk:10}, arrivals:'1,180 in next 30 min', exits:'Low right now', parking:[['P1',67],['P2',81],['P3',54],['P4',42]],
-      hotels:[['River View','1.1 km',39,'₹3,100'],['Festival Stay','1.9 km',58,'₹2,800'],['City Lodge','2.6 km',68,'₹2,400']],
-      food:[['Food Street A',88,'19 min'],['Food Street B',65,'11 min'],['Family Food',48,'7 min'],['Quick Bites',37,'5 min']],
-      schedule:[['3:00 PM','Travel window opens','done'],['3:40 PM','Gates open','done'],['4:00 PM','Festival opens','done'],['7:20 PM','Live kitchen & folk stage','live'],['8:45 PM','Night parade','next'],['9:55 PM','Exit guidance starts','next'],['10:30 PM','Event ends','next']],
-      engagement:[['Food Street',86],['Culture Stage',64],['Family Zone',53],['Craft Lane',48]], multiDay:false
-    },
-    {id:'marathon',eventId:'EF-MUM-SP-260912',status:'upcoming',type:'Sports',name:'Mumbai Night Marathon',venue:'Marine Drive Circuit',city:'Mumbai',date:'12 Sep 2026',time:'7:00 PM – 11:30 PM',duration:4.5,expected:18000,inside:0,health:96,color:C.cyan,center:[72.8240,18.9445],phase:'Setup and route checks',next:'Volunteer briefing at 4:00 PM',mainPlace:'Start Zone',crowd:{north:20,east:18,south:24,west:16},travel:{metro:49,car:18,shuttle:19,taxi:9,walk:5},arrivals:'Not started',exits:'Not started',parking:[['P1',5],['P2',8],['P3',2],['P4',1]],hotels:[['Coast Stay','0.8 km',82,'₹3,600'],['Marine View','1.4 km',64,'₹4,300']],food:[['Runner Fuel',5,'0 min'],['Hydration Zone',3,'0 min']],schedule:[['3:00 PM','Team setup','next'],['4:00 PM','Volunteer briefing','next'],['5:30 PM','Runner arrival','next'],['7:00 PM','Race starts','next']],engagement:[['Start Zone',0],['Finish Zone',0]],multiDay:false},
-    {id:'summit',eventId:'EF-MUM-CF-260915',status:'upcoming',type:'Conference',name:'India Future Leaders Summit',venue:'Grand Convention Centre',city:'Mumbai',date:'15–16 Sep 2026',time:'9:00 AM – 7:00 PM',duration:10,expected:8500,inside:0,health:95,color:'#9b6bd9',center:[72.8605,19.0733],phase:'Pre-event planning',next:'Partner desk setup on 14 Sep',mainPlace:'Main Hall',crowd:{north:12,east:9,south:10,west:8},travel:{metro:42,car:28,shuttle:16,taxi:10,walk:4},arrivals:'Not started',exits:'Not started',parking:[['P1',4],['P2',3],['P3',1],['P4',1]],hotels:[['Convention Hotel','0.2 km',37,'₹6,500'],['Business Stay','0.9 km',61,'₹4,800'],['Metro Rooms','1.7 km',74,'₹3,200']],food:[['Hall Cafe',0,'0 min'],['Partner Lounge',0,'0 min']],schedule:[['14 Sep','Partner setup','next'],['15 Sep 8:00 AM','Check-in opens','next'],['15 Sep 9:00 AM','Opening keynote','next'],['16 Sep 7:00 PM','Summit closes','next']],engagement:[['Main Hall',0],['Partner Zone',0]],multiDay:true},
-    {id:'monsoon',eventId:'EF-MUM-MU-260905',status:'done',type:'Music',name:'Monsoon Music Weekend',venue:'Bay Arena',city:'Mumbai',date:'05–06 Sep 2026',time:'4:00 PM – 11:00 PM',duration:7,expected:28000,inside:0,health:91,color:'#4d7fc4',center:[72.8310,19.0260],phase:'Completed',next:'Final report ready',mainPlace:'Main Stage',crowd:{north:0,east:0,south:0,west:0},travel:{metro:43,car:22,shuttle:19,taxi:11,walk:5},arrivals:'Completed',exits:'Completed',parking:[['P1',0],['P2',0],['P3',0],['P4',0]],hotels:[['Bay Stay','1.0 km',0,'₹3,400']],food:[['Main Food',0,'0 min']],schedule:[['05 Sep','Day 1 complete','done'],['06 Sep','Day 2 complete','done']],engagement:[['Main Stage',88],['Food Area',72]],multiDay:true},
-    {id:'startup',eventId:'EF-MUM-EX-260902',status:'done',type:'Expo',name:'Startup Connect Day',venue:'Innovation Centre',city:'Mumbai',date:'02 Sep 2026',time:'10:00 AM – 6:00 PM',duration:8,expected:6400,inside:0,health:94,color:'#30a17b',center:[72.8730,19.1040],phase:'Completed',next:'Post-event report ready',mainPlace:'Hall A',crowd:{north:0,east:0,south:0,west:0},travel:{metro:51,car:24,shuttle:11,taxi:9,walk:5},arrivals:'Completed',exits:'Completed',parking:[['P1',0],['P2',0]],hotels:[['Innovation Stay','0.8 km',0,'₹3,000']],food:[['Hall Cafe',0,'0 min']],schedule:[['02 Sep','Event complete','done']],engagement:[['Hall A',81],['Mentor Zone',64]],multiDay:false}
+      id:'food', eventId:'EF-MUM-FF-044', category:'Festival',
+      name:'City Food Festival', venue:'Riverside Park', city:'Mumbai',
+      start:iso(plusMin(seed,-420)), end:iso(plusMin(seed,-120)), expected:18000, inside:0, capacity:24000, health:91,
+      entry:'East Gate',exit:'East Gate',place:'Central Food Lawn',stayNeeded:false,
+      gates:{North:35,East:42,South:49,West:37},
+      parking:[{name:'P1 Riverside',total:900,used:0,walk:'6 min',road:'River Road',note:'Closed after event'}],
+      food:[{name:'Street Food',crowd:0,wait:'0 min',status:'Closed'},{name:'Dessert Lane',crowd:0,wait:'0 min',status:'Closed'}],
+      hotels:[{name:'River Inn',distance:'1.2 km',rooms:36,price:'₹2,600',travel:'Taxi'}],
+      transport:[{name:'Metro Riverside',load:0,next:'—',detail:'Event ended'}],
+      schedule:schedule(seed,[['Entry','East Gate','Festival entry.',-420,-390],['Lunch rush','Main lawn','Peak lunch crowd.',-390,-300],['Chef stage','Stage 1','Live cooking.',-300,-210],['Final tasting','Main lawn','Last tasting session.',-210,-140],['Exit','East Gate','Managed guest exit.',-140,-120]])
+    }
   ];
 
-  let maps=[];
-  let state={view:'landing',role:'attendee',authMode:'signin',selectedEvent:'cricket',session:null,tab:'overview',pass:null,mapDestination:null,eventFilter:'live'};
+  const TASKS = [
+    {id:'T-21',event:'indpak',priority:'High',title:'Open one more East Gate line',where:'East Gate',why:'North Gate is 93% busy',by:'10 min',need:'6 staff + 2 scanners',route:'Service Zone → East Gate',status:'New',steps:['Move six staff to East Gate.','Open one extra ticket scan lane.','Place the “Use East Gate” board.','Report queue level after 8 minutes.']},
+    {id:'T-22',event:'indpak',priority:'Medium',title:'Move food demand to East Food Street',where:'North Food Court',why:'Current wait is 20 min',by:'Now',need:'2 guides + digital sign',route:'North Concourse → East Food Street',status:'New',steps:['Place two guides near North Food Court.','Show East Food Street wait time on sign.','Keep medical path clear.']},
+    {id:'T-23',event:'indpak',priority:'High',title:'Prepare P4 overflow parking',where:'Parking P4',why:'P1 is almost full',by:'15 min',need:'4 marshals + cones',route:'Third Road → P4',status:'Working',steps:['Open overflow gate.','Place cones before Third Road junction.','Send new cars to P4.']},
+    {id:'T-31',event:'pulse',priority:'High',title:'Redirect South Road arrivals',where:'South Road',why:'Road load is 92%',by:'12 min',need:'4 marshals',route:'South Road → East Link',status:'New',steps:['Reduce South entry flow.','Send vehicles to East Link.','Update P3 parking board.']}
+  ];
 
-  const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}};
-  const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-  const eventById=id=>EVENTS.find(e=>e.id===id)||EVENTS[0];
-  const selectedEvent=()=>eventById(state.selectedEvent);
-  const roleName=r=>r==='management'?'Event Management':r==='operator'?'Operator':'Attendee';
-  const statusPill=s=>s==='live'?'<span class="pill pill-live">LIVE NOW</span>':s==='upcoming'?'<span class="pill pill-upcoming">UPCOMING</span>':'<span class="pill pill-done">COMPLETED</span>';
-  const fmt=n=>Number(n).toLocaleString('en-IN');
-  const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-  const crowdWord=v=>v>=85?'Very busy':v>=70?'Busy':v>=50?'Medium':'Easy';
-  const crowdColor=v=>v>=85?C.red:v>=70?C.coral:v>=50?C.amber:C.green;
-  const bestGate=e=>Object.entries(e.crowd).sort((a,b)=>a[1]-b[1])[0][0];
-  const brand=(dark=false)=>`<div class="brand"><span class="brand-mark">E</span><span style="${dark?'color:#fff':''}">EventFlow</span></div>`;
+  if(!localStorage.getItem(STORE.users)) write(STORE.users,[
+    {name:'Demo Guest',email:'attendee@eventflow.demo',password:'event123',role:'attendee'},
+    {name:'Demo Operator',email:'operator@eventflow.demo',password:'event123',role:'operator'},
+    {name:'Demo Manager',email:'manager@eventflow.demo',password:'event123',role:'management'}
+  ]);
+  if(!localStorage.getItem(STORE.tasks)) write(STORE.tasks,TASKS);
 
-  function seed(){
-    if(!localStorage.getItem(DB.users)) write(DB.users,[
-      {id:'m1',name:'Aarav Manager',email:'manager@eventflow.demo',password:'event123',role:'management'},
-      {id:'o1',name:'Riya Operator',email:'operator@eventflow.demo',password:'event123',role:'operator'},
-      {id:'a1',name:'Demo Guest',email:'attendee@eventflow.demo',password:'event123',role:'attendee'}
-    ]);
-    if(!localStorage.getItem(DB.tasks)){
-      const tasks=[];
-      EVENTS.filter(e=>e.status!=='done').forEach((e,i)=>{
-        tasks.push(
-          {id:e.id+'-1',eventId:e.id,title:'Open an easier entry line',where:i%2?'South Gate':'East Gate',why:'The main arrival side is getting busy.',action:'Open two extra lanes and guide arriving guests to the easier side.',due:'Within 10 min',route:'Operations Point → '+(i%2?'South Gate':'East Gate'),priority:'High',status:'New',need:'2 staff + signs',steps:['Reach the gate','Check lane is clear','Open two lanes','Guide guests and report back']},
-          {id:e.id+'-2',eventId:e.id,title:'Add one shuttle',where:'Parking P3',why:'Pickup demand is rising.',action:'Move one free shuttle to Parking P3 and keep the queue moving.',due:'Within 15 min',route:'Fleet Bay → Parking P3',priority:'Medium',status:'Ready',need:'1 shuttle + driver',steps:['Confirm driver','Move shuttle','Open boarding','Update capacity']},
-          {id:e.id+'-3',eventId:e.id,title:'Check food service',where:'East Food Street',why:'Guests need a lower-wait food option.',action:'Check staff, water and queue signs. Open the overflow counter if needed.',due:'Before next rush',route:'Service Corridor → East Food Street',priority:'Normal',status:'Ready',need:'2 food staff',steps:['Check queue','Open overflow counter','Refill water','Send status update']}
-        );
-      });
-      write(DB.tasks,tasks);
+  let session = read(STORE.session,null);
+  let state = {
+    screen: session ? 'app' : 'landing',
+    authMode:'signin', authRole:'attendee',
+    role: session?.role || 'attendee',
+    name: session?.name || '',
+    tab:'events', filter:'all', eventId:'indpak', ticket:read(STORE.ticket,null),
+    destination:'seat', route:'safe', selectedTask:'T-21'
+  };
+
+  function statusOf(e){ const t=N(); if(t < new Date(e.start)) return 'upcoming'; if(t > new Date(e.end)) return 'done'; return 'live'; }
+  function statusText(s){ return s==='done'?'Completed':s[0].toUpperCase()+s.slice(1); }
+  function activeSlot(e){ const t=N(); return e.schedule.find(s=>t>=new Date(s.start)&&t<new Date(s.end)); }
+  function nextSlot(e){ const t=N(); return e.schedule.find(s=>new Date(s.start)>t); }
+  function countdown(v){ const m=Math.max(0,Math.round((new Date(v)-N())/60000)); if(m<60) return `${m} min`; return `${Math.floor(m/60)}h ${m%60}m`; }
+  function bestGate(e){ return Object.entries(e.gates).sort((a,b)=>a[1]-b[1])[0][0]; }
+  function worstGate(e){ return Object.entries(e.gates).sort((a,b)=>b[1]-a[1])[0][0]; }
+  function crowdWord(v){ return v>=85?'Very busy':v>=70?'Busy':v>=50?'Medium':'Easy'; }
+  function crowdColor(v){ return v>=85?'#ff6577':v>=70?'#ff9a62':v>=50?'#ffc66b':'#62d6a7'; }
+  function e(){ return EVENTS.find(x=>x.id===state.eventId) || EVENTS[0]; }
+  function roleLabel(r){ return r==='management'?'Event Management':r[0].toUpperCase()+r.slice(1); }
+  function icon(ch){ return `<span class="nav-icon">${ch}</span>`; }
+  function toast(title,text=''){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=`<b>${title}</b><span>${text}</span>`; toastHost.appendChild(d); setTimeout(()=>d.remove(),3200); }
+  function setState(p){ Object.assign(state,p); render(); }
+
+  function landing(){
+    return `<div class="shell">
+      <header class="topnav">
+        <div class="brand"><span class="brand-mark"></span>EventFlow</div>
+        <div class="nav-actions"><button class="btn btn-soft" data-action="open-live">Live events</button><button class="btn btn-primary" data-action="auth">Sign in</button></div>
+      </header>
+      <section class="hero">
+        <div>
+          <span class="eyebrow"><span class="live-dot"></span>Live event operating system</span>
+          <h1>Make every event <span>easy to enter, enjoy and manage.</span></h1>
+          <p>EventFlow connects guests, event teams, travel, food, stays, entry gates and live crowd movement in one simple flow. Guests always know what is happening now and where to go next. Teams always know what needs attention.</p>
+          <div class="hero-actions"><button class="btn btn-primary" data-action="auth">Open EventFlow</button><button class="btn btn-dark" data-action="demo-attendee">Try guest demo</button></div>
+          <div class="hero-points">
+            <div class="hero-point"><b>Know what is live</b><span>See the event program, live now, next and later.</span></div>
+            <div class="hero-point"><b>Guide every guest</b><span>Seat, food, washroom, medical, parking, stay and exit.</span></div>
+            <div class="hero-point"><b>Run the whole event</b><span>Management and operators share the same live picture.</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="event-orbit">
+            <div class="orbit-ring ring1"></div><div class="orbit-ring ring2"></div>
+            <div class="orbit-line ol1"></div><div class="orbit-line ol2"></div><div class="orbit-line ol3"></div><div class="orbit-line ol4"></div>
+            <div class="orbit-core"><div><b>EVENTFLOW</b><span>One event. One clear flow.</span></div></div>
+            <div class="orbit-node n1"><b>Guests</b><span>Pass · route · help</span></div>
+            <div class="orbit-node n2"><b>Event team</b><span>Tasks · crowd · alerts</span></div>
+            <div class="orbit-node n3"><b>Travel</b><span>Metro · shuttle · parking</span></div>
+            <div class="orbit-node n4"><b>Services</b><span>Food · store · medical</span></div>
+            <div class="orbit-node n5"><b>Stay</b><span>Rooms · pickup · check-in</span></div>
+          </div>
+        </div>
+      </section>
+      <section class="section soft" id="live-events">
+        <div class="section-head"><small>What EventFlow manages</small><h2>More than crowd control.</h2><p>Traffic and crowded gates are only one part. EventFlow follows the full guest journey from arrival to exit while giving the event team a live operating view.</p></div>
+        <div class="feature-grid">
+          ${feature('01','Live program','Guests see what is happening now, what starts next and where it happens.')}
+          ${feature('02','Smart event guide','Seat, stage, food, store, washroom, help, parking, stay and exit from one screen.')}
+          ${feature('03','Safer navigation','Busy roads and gates are avoided when a faster or less crowded route is available.')}
+          ${feature('04','Food & service flow','Teams can see which stalls are overloaded and which areas have free capacity.')}
+          ${feature('05','Travel & parking','Parking spaces, road pressure, metro, shuttle and pickup options are managed together.')}
+          ${feature('06','Team operations','Operators receive clear jobs with place, reason, deadline, route and required resources.')}
+        </div>
+      </section>
+      <section class="section">
+        <div class="section-head"><small>Live demo events</small><h2>See the event first. Then choose your role.</h2><p>EventFlow can run many events at the same time. Select any live or upcoming event after sign in.</p></div>
+        <div class="live-showcase">
+          <div class="showcase-main"><span class="eyebrow"><span class="live-dot"></span>Current operating picture</span><div class="showcase-kpis">
+            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='live').length}</b><span>Live now</span></div>
+            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='upcoming').length}</b><span>Upcoming</span></div>
+            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='done').length}</b><span>Completed</span></div>
+            <div class="mini-kpi"><b>3</b><span>User roles</span></div>
+          </div></div>
+          <div class="showcase-side">${EVENTS.map(x=>`<div class="event-chip"><div><strong>${x.name}</strong><small>${x.venue} · ${fmtTime(x.start)} – ${fmtTime(x.end)}</small></div><span class="status-pill status-${statusOf(x)}">${statusText(statusOf(x))}</span></div>`).join('')}</div>
+        </div>
+      </section>
+    </div>`;
+  }
+  function feature(n,t,p){ return `<article class="feature-card"><div class="feature-icon">${n}</div><h3>${t}</h3><p>${p}</p></article>`; }
+
+  function auth(){
+    return `<div class="auth-wrap">
+      <section class="auth-art"><div><div class="brand"><span class="brand-mark"></span>EventFlow</div><h1>Choose your role. See only what you need.</h1><p>Guests get a simple event guide. Operators get jobs and live work areas. Event managers get the full event control view.</p></div>
+      <div class="auth-list"><div><b>Attendee</b><span>Ticket, live program, route and services.</span></div><div><b>Operator</b><span>Event jobs, crowd points and service loads.</span></div><div><b>Management</b><span>All events, teams, guests and operations.</span></div></div></section>
+      <section class="auth-panel"><div class="auth-card"><h2>${state.authMode==='signup'?'Create account':'Welcome back'}</h2><p>${state.authMode==='signup'?'Create a local browser account for this demo.':'Sign in to open your EventFlow workspace.'}</p>
+      <div class="role-tabs">${['attendee','operator','management'].map(r=>`<button class="${state.authRole===r?'active':''}" data-action="auth-role" data-role="${r}">${roleLabel(r)}</button>`).join('')}</div>
+      <form id="auth-form">
+      ${state.authMode==='signup'?`<div class="form-field"><label>Name</label><input name="name" placeholder="Your name" required /></div>`:''}
+      <div class="form-field"><label>Email</label><input name="email" type="email" value="${state.authRole==='attendee'?'attendee@eventflow.demo':state.authRole==='operator'?'operator@eventflow.demo':'manager@eventflow.demo'}" required /></div>
+      <div class="form-field"><label>Password</label><input name="password" type="password" value="event123" required /></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:6px" type="submit">${state.authMode==='signup'?'Create account':'Sign in'}</button>
+      </form>
+      <div class="auth-note">Demo password: <b>event123</b>. Accounts are stored only in this browser. No database is used in this version.</div>
+      <button class="btn btn-soft" style="width:100%;margin-top:10px;color:#24364a;border-color:#dce3eb" data-action="toggle-auth">${state.authMode==='signup'?'Already have an account? Sign in':'New here? Create account'}</button>
+      <button class="btn" style="width:100%;margin-top:8px;background:transparent;color:#5d7084" data-action="back-home">Back to home</button>
+      </div></section>
+    </div>`;
+  }
+
+  const NAV = {
+    attendee:[['events','Events','E'],['journey','My Journey','J'],['navigate','Navigate','N'],['services','Food, Stay & Travel','S']],
+    operator:[['events','Events','E'],['overview','Live Work','L'],['map','Movement','M'],['tasks','Tasks','T'],['services','Services','S']],
+    management:[['events','All Events','E'],['overview','Control Room','C'],['journey','Guest Journey','J'],['map','Live Movement','M'],['services','Food, Stay & Travel','S'],['tasks','Teams & Jobs','T'],['reports','Reports','R']]
+  };
+
+  function appShell(content){
+    const ev=e();
+    return `<div class="app-layout">
+      <aside class="sidebar"><div class="brand"><span class="brand-mark"></span>EventFlow</div>
+        <div class="side-event"><small>Selected event</small><b>${ev.name}</b><span>${ev.eventId} · ${statusText(statusOf(ev))}</span></div>
+        <nav class="side-nav">${NAV[state.role].map(([id,label,ic])=>`<button data-action="tab" data-tab="${id}" class="${state.tab===id?'active':''}">${icon(ic)}${label}</button>`).join('')}</nav>
+        <div class="sidebar-bottom"><div class="user-mini"><b>${state.name||'Demo user'}</b><span>${roleLabel(state.role)}</span></div><button class="btn btn-soft" style="width:100%;margin-top:8px" data-action="logout">Sign out</button></div>
+      </aside>
+      <main class="main"><header class="app-topbar"><div class="app-title"><small>${roleLabel(state.role)}</small><h1>${tabTitle()}</h1></div><div class="top-tools"><div class="clock-chip" id="clock">${new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit',second:'2-digit'}).format(N())}</div><button class="btn btn-dark" data-action="events">Change event</button></div></header>${content}</main>
+    </div>`;
+  }
+  function tabTitle(){ const item=NAV[state.role].find(x=>x[0]===state.tab); return item?item[1]:'EventFlow'; }
+
+  function eventsPage(){
+    const counts={all:EVENTS.length,live:EVENTS.filter(x=>statusOf(x)==='live').length,upcoming:EVENTS.filter(x=>statusOf(x)==='upcoming').length,done:EVENTS.filter(x=>statusOf(x)==='done').length};
+    const list=EVENTS.filter(x=>state.filter==='all'||statusOf(x)===state.filter);
+    return `<section class="page"><div class="page-head"><div><h2>${state.role==='attendee'?'Your event hub':'Event control hub'}</h2><p>${state.role==='attendee'?'First choose the event you are attending. You will then see what is live, where to go and what you need next.':'See every event by real time state. Open one event to manage its guests, teams, travel, food, stay and live operations.'}</p></div></div>
+      <div class="stats"><div class="stat"><small>All events</small><b>${counts.all}</b><span>Available in EventFlow</span></div><div class="stat"><small>Live now</small><b>${counts.live}</b><span>Running at this moment</span></div><div class="stat"><small>Upcoming</small><b>${counts.upcoming}</b><span>Still left to start</span></div><div class="stat"><small>Completed</small><b>${counts.done}</b><span>Already finished</span></div></div>
+      <div class="filters">${[['all','All events'],['live','Live'],['upcoming','Upcoming'],['done','Completed']].map(x=>`<button class="filter ${state.filter===x[0]?'active':''}" data-action="filter" data-filter="${x[0]}">${x[1]}</button>`).join('')}</div>
+      <div class="event-list">${list.map(eventRow).join('')}</div>
+    </section>`;
+  }
+  function eventRow(x){
+    const s=statusOf(x); const active=activeSlot(x); const nxt=nextSlot(x);
+    return `<article class="event-row"><div class="event-name"><span class="tag ${s}">${statusText(s)}</span><b style="display:block;margin-top:8px">${x.name}</b><small>${x.category} · ${x.venue} · ${x.city}</small></div><div class="event-meta"><small>Event ID</small><b>${x.eventId}</b></div><div class="event-meta"><small>Time</small><b class="event-time">${fmtDateShort(x.start)} · ${fmtTime(x.start)} – ${fmtTime(x.end)}</b></div><div class="event-meta"><small>${s==='live'?'Live now':s==='upcoming'?'Starts in':'Status'}</small><b>${s==='live'?(active?.title||'Event live'):s==='upcoming'?countdown(x.start):'Completed'}</b></div><div class="event-actions"><button class="btn btn-dark" data-action="select-event" data-event="${x.id}">View event</button>${state.role==='attendee'&&s!=='done'?`<button class="btn btn-primary" data-action="go-event" data-event="${x.id}">Go to event</button>`:''}</div></article>`;
+  }
+
+  function attendeeJourney(){
+    const ev=e(); const act=activeSlot(ev); const nxt=nextSlot(ev);
+    if(!state.ticket){
+      return `<section class="page"><div class="page-head"><div><h2>Open your event pass</h2><p>Enter the ticket number from your ticket. EventFlow will prepare the event guide for this event.</p></div></div><div class="grid2"><div class="panel"><div class="section-label">Ticket</div><h3>${ev.name}</h3><p>${ev.venue} · ${fmtTime(ev.start)} – ${fmtTime(ev.end)}</p><form id="ticket-form"><div class="form-field"><label>Ticket number</label><input name="ticket" placeholder="Example: INDPK-C12-018" required /></div><button class="btn btn-primary" type="submit">Open my pass</button></form></div><div class="panel"><div class="section-label">What you get</div><div class="activity-list">${activity('✓','Live program','Know what is happening now and next.',true)}${activity('→','Best way in','Get the easier gate and route.',false)}${activity('●','Everything inside','Seat, food, washroom, medical and exit.',false)}</div></div></div></section>`;
     }
-    state.session=read(DB.session,null);
+    return `<section class="page"><div class="page-head"><div><h2>Your event, one clear journey</h2><p>Start from what is live now. Tap any place to open navigation.</p></div><button class="btn btn-dark" data-action="clear-ticket">Use another ticket</button></div>
+      <div class="ticket-card"><div class="ticket-pass"><div class="tagline">EventFlow smart pass</div><h3>${ev.name}</h3><p>${ev.venue} · ${fmtDate(ev.start)}</p><div class="ticket-data"><div><small>Ticket</small><b>${state.ticket}</b></div><div><small>Your place</small><b>${ev.place}</b></div><div><small>Best entry</small><b>${bestGate(ev)} Gate</b></div><div><small>Exit</small><b>${ev.exit}</b></div><div><small>Live now</small><b>${act?.title||statusText(statusOf(ev))}</b></div><div><small>Next</small><b>${nxt?.title||'Managed exit'}</b></div></div><div class="ticket-qr"></div></div>
+      <div class="panel"><div class="section-label">What is happening now?</div><h3>${act?.title||'Event not live right now'}</h3><p>${act?.detail|| (statusOf(ev)==='upcoming'?`Event starts in ${countdown(ev.start)}.`:'This event has finished.')}</p>${act?`<button class="btn btn-primary" data-action="dest" data-dest="seat">Go to ${act.place}</button>`:''}</div></div>
+      <div class="grid2" style="margin-top:14px"><div class="panel"><div class="section-label">Go anywhere</div><div class="activity-list">
+      ${activity('◆','My place',ev.place,false,'seat')}${activity('●','Food & drinks',bestFood(ev).name+' · '+bestFood(ev).wait,false,'food')}${activity('◇','Event store','Fan store / event merchandise',false,'store')}${activity('WC','Washroom','Nearest low-queue washroom',false,'washroom')}${activity('+','Medical help','First-aid and medical support',false,'medical')}${activity('P','Parking',bestParking(ev).name+' · '+bestParking(ev).walk,false,'parking')}${ev.stayNeeded?activity('H','Stay & hotel',bestHotel(ev).name+' · '+bestHotel(ev).rooms+' rooms left',false,'hotel'):''}${activity('M','Metro / shuttle',bestTransport(ev).name+' · '+bestTransport(ev).next,false,'metro')}${activity('↗','Exit',ev.exit+' · best after event',false,'exit')}
+      </div></div><div class="panel"><div class="section-label">Today at this event</div><div class="timeline">${timelineRows(ev)}</div></div></div>
+    </section>`;
+  }
+  function activity(ic,title,sub,nowFlag,dest){ return `<div class="activity ${nowFlag?'activity-now':''}"><div class="activity-icon">${ic}</div><div><b>${title}</b><span>${sub}</span></div>${dest?`<button class="btn btn-soft" data-action="dest" data-dest="${dest}">Go there</button>`:''}</div>`; }
+  function timelineRows(ev){ const t=N(); return ev.schedule.map((s,i)=>{ const live=t>=new Date(s.start)&&t<new Date(s.end); const next=!live&&new Date(s.start)>t&&!ev.schedule.slice(0,i).some(x=>new Date(x.start)>t); return `<div class="timeline-row ${live?'live':next?'next':''}"><div class="timeline-time">${fmtTime(s.start)}</div><div class="timeline-line"><i class="timeline-dot"></i></div><div class="timeline-content"><b>${s.title}${live?' · LIVE':''}</b><p>${s.place} — ${s.detail}</p></div></div>`; }).join(''); }
+  function bestFood(ev){ return [...ev.food].sort((a,b)=>a.crowd-b.crowd)[0]; }
+  function bestParking(ev){ return [...ev.parking].sort((a,b)=>(a.used/a.total)-(b.used/b.total))[0]; }
+  function bestHotel(ev){ return [...ev.hotels].sort((a,b)=>b.rooms-a.rooms)[0]; }
+  function bestTransport(ev){ return [...ev.transport].sort((a,b)=>a.load-b.load)[0]; }
+
+  const DEST = {
+    seat:{label:'Your place',turn:'Take the next right',sub:'Then follow EventFlow signs to your block.',eta:'11 min',distance:'1.8 km'},
+    food:{label:'East Food Street',turn:'Keep left after East Gate',sub:'Low queue food zone is ahead.',eta:'8 min',distance:'1.2 km'},
+    store:{label:'Event Store',turn:'Take the second left',sub:'Store is beside the east concourse.',eta:'7 min',distance:'950 m'},
+    washroom:{label:'Washroom B',turn:'Go straight for 300 m',sub:'Use the next indoor corridor.',eta:'5 min',distance:'620 m'},
+    medical:{label:'Medical Point',turn:'Turn right at the service road',sub:'Medical team is beside Gate East.',eta:'6 min',distance:'780 m'},
+    parking:{label:'P3 East Parking',turn:'Take East Access Road',sub:'Do not park on Third Road.',eta:'9 min',distance:'2.1 km'},
+    hotel:{label:'Recommended Stay',turn:'Continue toward Metro Link',sub:'Shuttle pickup is outside East Gate.',eta:'18 min',distance:'3.4 km'},
+    metro:{label:'Metro East',turn:'Keep right after the exit',sub:'Next metro shown in travel panel.',eta:'12 min',distance:'2.6 km'},
+    exit:{label:'South Gate Exit',turn:'Follow the south concourse',sub:'Lower pressure exit for your section.',eta:'8 min',distance:'1.1 km'}
+  };
+
+  function navigation(){
+    const ev=e(); const d=DEST[state.destination]||DEST.seat; const safe=bestGate(ev); const busy=worstGate(ev);
+    return `<section class="page"><div class="page-head"><div><h2>Turn-by-turn event navigation</h2><p>This map is focused like a driving navigation screen: one route, next turn, ETA, busy road sections, easier gate and nearby event services.</p></div><button class="btn btn-dark" data-action="journey">Back to journey</button></div>
+      <div class="nav-cockpit"><div class="nav-world"><div class="nav-ground"><div class="city-grid"></div><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="road r4"></div><div class="block blk1"></div><div class="block blk2"></div><div class="block blk3"></div><div class="block blk4"></div><div class="stadium" data-label="${ev.venue}"></div></div>
+        <svg class="route-layer" viewBox="0 0 1000 720" preserveAspectRatio="none"><path class="route-safe-outline" d="M120 610 C210 580 245 520 330 500 C420 480 475 475 525 430 C590 370 610 320 675 310 C730 302 755 325 790 350"/><path class="route-safe" d="M120 610 C210 580 245 520 330 500 C420 480 475 475 525 430 C590 370 610 320 675 310 C730 302 755 325 790 350"/><path class="route-busy" d="M330 500 C390 400 450 250 535 170"/><path class="route-alt" d="M120 610 C180 530 220 430 325 360 C410 300 470 270 535 170"/></svg>
+        <div class="crowd-zone cz-red"></div><div class="crowd-zone cz-green"></div>
+        <div class="gate gate-n">N<br>${ev.gates.North}%</div><div class="gate gate-e">E<br>${ev.gates.East}%</div><div class="gate gate-s">S<br>${ev.gates.South}%</div><div class="gate gate-w">W<br>${ev.gates.West}%</div>
+        <div class="map-pin pin-start">YOU</div><div class="map-pin pin-park">P3</div><div class="map-pin pin-food">FOOD</div><div class="map-pin pin-hotel">STAY</div><div class="map-pin pin-metro">METRO</div><div class="vehicle-arrow"></div>
+        <div class="turn-banner"><div class="top"><div class="turn-arrow">↱</div><div><small>In 240 m</small><h3>${d.turn}</h3><p>${d.sub}</p></div></div></div>
+        <div class="nav-status"><div class="eta"><div><b>${d.eta}</b><span>ETA</span></div><div><b>${d.distance}</b><span>Distance</span></div><div><b>${safe}</b><span>Best gate</span></div></div><div class="traffic-card"><b>${busy} Gate is crowded.</b><br/>EventFlow is keeping you on the lower-pressure route through ${safe} Gate.</div></div>
+      </div><aside class="nav-side"><div class="section-label">Destination</div><h2>${d.label}</h2><p>${ev.name} · ${ev.venue}</p>
+        <div class="route-card best"><h4>Recommended route · ${safe} Gate</h4><p>Lower crowd pressure and easier movement.</p><footer><span>${d.eta}</span><span>${ev.gates[safe]}% crowd</span></footer></div>
+        <div class="route-card warn"><h4>Shorter route · ${busy} Gate</h4><p>Not recommended right now because the gate is very busy.</p><footer><span>+${Math.max(4,Math.round(ev.gates[busy]/12))} min wait</span><span>${ev.gates[busy]}% crowd</span></footer></div>
+        <div class="dest-grid">${Object.entries(DEST).map(([k,v])=>`<button class="dest-btn ${state.destination===k?'active':''}" data-action="dest" data-dest="${k}">${v.label}</button>`).join('')}</div>
+        <div class="info-stack"><div class="info-row"><span>Best parking</span><b>${bestParking(ev).name}<br>${bestParking(ev).walk} walk</b></div><div class="info-row"><span>Metro</span><b>${bestTransport(ev).name}<br>${bestTransport(ev).next}</b></div><div class="info-row"><span>Food</span><b>${bestFood(ev).name}<br>${bestFood(ev).wait}</b></div><div class="info-row"><span>Exit</span><b>${ev.exit}</b></div></div>
+      </aside></div></section>`;
   }
 
-  function toast(title,text=''){const t=document.createElement('div');t.className='toast';t.innerHTML=`<b>${title}</b><span>${text}</span>`;toastHost.appendChild(t);setTimeout(()=>t.remove(),3300)}
-  function cleanMaps(){maps.forEach(m=>{try{m.remove()}catch{}});maps=[]}
-  function render(){cleanMaps();window.scrollTo({top:0,behavior:'auto'});if(state.view==='landing')renderLanding();else if(state.view==='role')renderRoleGate();else if(state.view==='auth')renderAuth();else renderApp()}
-
-  function renderLanding(){
-    const live=EVENTS.filter(e=>e.status==='live');
-    app.innerHTML=`
-      <header class="topbar"><div class="container nav">${brand(true)}<nav class="nav-links"><a href="#events">Live events</a><a href="#features">What EventFlow does</a><a href="#roles">For everyone</a></nav><div class="nav-actions"><button class="btn btn-ghost btn-sm" data-auth="signin">Sign in</button><button class="btn btn-light btn-sm" data-auth="signup">Create account</button></div></div></header>
-      <main>
-        <section class="hero"><div class="container hero-grid"><div><span class="pill pill-dark">END-TO-END EVENT EXPERIENCE</span><h1>One event.<br><em>One clear flow.</em></h1><p>EventFlow helps guests know what to do from arrival to exit, helps operators know exactly what work to do, and gives event management one clear view of people, travel, food, stay, spaces and teams.</p><div class="hero-actions"><a class="btn btn-primary" href="#events">See live events</a><button class="btn btn-light" data-auth="signup">Create account</button></div><div class="hero-proof"><div class="proof"><b>For guests</b>Ticket → event → help → exit</div><div class="proof"><b>For teams</b>Task → place → action → done</div><div class="proof"><b>For management</b>Plan → live control → report</div></div></div><div class="hero-showcase"><div class="flow-orb"></div><div class="hero-device"><div class="device-head"><div><b style="font-size:13px">EventFlow Live Control</b><span style="display:block;color:rgba(255,255,255,.5);font-size:10px;margin-top:3px">Everything important, in one flow</span></div><i class="mini-live"></i></div>${[['01','Guest arrives','Ticket, gate, seat, food and help'],['02','Event is live','Crowd, activities, service and team work'],['03','Guest leaves','Exit, pickup, shuttle and stay']].map(x=>`<div class="journey-band"><div class="journey-dot">${x[0]}</div><div><b>${x[1]}</b><span>${x[2]}</span></div><small>CONNECTED</small></div>`).join('')}<div class="device-foot"><div class="device-kpi"><small>Event health</small><strong>88%</strong></div><div class="device-kpi"><small>Guests inside</small><strong>42.8K</strong></div><div class="device-kpi"><small>Open team jobs</small><strong>6</strong></div></div></div></div></div></section>
-        <section class="section-tight" id="events"><div class="container"><span class="eyebrow">Live today</span><h2 class="section-title">Choose the event first.</h2><p class="section-sub">Every EventFlow journey starts with an event. After you choose one, you can enter as an attendee, operator or event manager.</p><div class="live-events">${live.map(landingEventCard).join('')}</div></div></section>
-        <section class="section feature-shell" id="features"><div class="container"><span class="eyebrow" style="color:#a99dff">What EventFlow does</span><h2 class="section-title">It is much more than a crowd map.</h2><p class="section-sub">The map is only used when someone needs to see a place or route. The real product connects the full event journey.</p><div class="feature-grid">${[
-          ['01','Guest journey','Ticket, current activity, entry, food, washroom, help, stay and exit in one simple journey.'],
-          ['02','Live people flow','See where people are moving, which areas are getting busy and where they are going next.'],
-          ['03','Arrival & exit','Understand how people arrive, which gates and transport they use, and how they leave smoothly.'],
-          ['04','Food, stay & spaces','Track food queues, water, rooms, rest areas, parking and service readiness.'],
-          ['05','Team operations','Give operators clear work with where, what, why, by when and how to complete it.'],
-          ['06','Guest messages','Send simple event, safety and route messages based on the area or event moment.']
-        ].map(f=>`<article class="feature-card"><div class="feature-no">${f[0]}</div><h3>${f[1]}</h3><p>${f[2]}</p></article>`).join('')}</div></div></section>
-        <section class="section" id="roles"><div class="container"><span class="eyebrow">Three views</span><h2 class="section-title">The same event. The right view for each person.</h2><div class="roles-grid">${roleLandingCard('Attendee','Know what is happening now, where to go next, what to eat, where to get help and how to leave.',['My ticket and event pass','What is live now','Food, stay and help','3D guide only when needed'])}${roleLandingCard('Operator','See only the events and jobs assigned to you, with clear steps and work locations.',['My live events','Detailed jobs','Work route and area','People, travel and services'])}${roleLandingCard('Event Management','Control every event from planning to live operations and final reports.',['Live / upcoming / completed events','Guest journey and service readiness','Teams, travel, stay and food','3D operations map and reports'])}</div></div></section>
-        <section class="section-tight"><div class="container"><div class="closing"><span class="pill pill-dark">EVENTFLOW</span><h2 class="section-title" style="margin-top:16px">Make the whole event easier to understand and easier to run.</h2><p>Start with one of the live demo events. No database, paid map key or external login is required for this prototype.</p><a class="btn btn-light" href="#events">Choose a live event</a></div></div></section>
-      </main>`;
-    $$('[data-auth]').forEach(b=>b.onclick=()=>{state.authMode=b.dataset.auth;state.view='auth';render()});
-    $$('[data-open-event]').forEach(b=>b.onclick=()=>{state.selectedEvent=b.dataset.openEvent;state.view='role';render()});
+  function controlRoom(role){
+    const ev=e(); const active=activeSlot(ev); const best=bestGate(ev), worst=worstGate(ev); const tasks=read(STORE.tasks,TASKS).filter(t=>t.event===ev.id);
+    return `<section class="page"><div class="page-head"><div><h2>${role==='management'?'Live control room':'Live work picture'}</h2><p>${role==='management'?'Everything happening at the selected event: guests, gates, travel, food, stay and team work.':'The important live information your event team needs to act quickly.'}</p></div><span class="tag ${statusOf(ev)}">${statusText(statusOf(ev))}</span></div>
+      <div class="stats"><div class="stat"><small>Guests inside</small><b>${ev.inside.toLocaleString('en-IN')}</b><span>of ${ev.capacity.toLocaleString('en-IN')} capacity</span></div><div class="stat"><small>Live now</small><b style="font-size:17px">${active?.title||statusText(statusOf(ev))}</b><span>${active?.place||'No live slot'}</span></div><div class="stat"><small>Busiest gate</small><b>${worst}</b><span>${ev.gates[worst]}% crowd pressure</span></div><div class="stat"><small>Open jobs</small><b>${tasks.filter(t=>t.status!=='Done').length}</b><span>${tasks.filter(t=>t.priority==='High'&&t.status!=='Done').length} high priority</span></div></div>
+      <div class="grid2"><div class="panel"><div class="section-label">Gate crowd</div><h3>Where are people building up?</h3><p>Use this with the movement map to redirect guests and staff.</p><div class="crowd-bars">${Object.entries(ev.gates).map(([k,v])=>`<div class="crowd-row"><span>${k} Gate</span><div class="meter"><i style="width:${v}%;background:${crowdColor(v)}"></i></div><b>${v}%</b></div>`).join('')}</div><button class="btn btn-primary" style="margin-top:15px" data-action="map">Open navigation view</button></div>
+      <div class="panel"><div class="section-label">Live program</div><div class="timeline">${timelineRows(ev)}</div></div></div>
+      <div class="grid3" style="margin-top:14px">${serviceSummary('Travel & parking',`${bestParking(ev).name} is the best parking now.`,`${bestParking(ev).total-bestParking(ev).used} spaces`,`Road: ${bestParking(ev).road}`)}${serviceSummary('Food & stores',`${bestFood(ev).name} has the shortest queue.`,bestFood(ev).wait,`${bestFood(ev).crowd}% crowd`)}${serviceSummary('Stay & hotels',ev.stayNeeded?`${bestHotel(ev).name} has the most room capacity.`:'Stay is optional for this short event.',ev.hotels[0]?.rooms+' rooms',ev.hotels[0]?.travel||'—')}</div>
+      <div class="panel" style="margin-top:14px"><div class="section-label">Team work</div><h3>Jobs that keep the event moving</h3><p>Each job shows where, why, by when and what the operator needs.</p>${tasks.map(jobCard).join('')}</div>
+    </section>`;
   }
-  function landingEventCard(e){return `<article class="event-card" style="--event:${e.color}">${statusPill(e.status)}<h3>${e.name}</h3><p>${e.type} · ${e.venue}<br>${e.date} · ${e.time}</p><span class="event-id">EVENT ID · ${e.eventId}</span><div class="event-meta"><span>${fmt(e.inside)} inside</span><span>${e.health}% health</span></div><button class="btn btn-soft btn-block btn-sm" data-open-event="${e.id}">Open event →</button></article>`}
-  function roleLandingCard(title,text,items){return `<article class="role-card"><span class="eyebrow">${title}</span><h3>${title}</h3><p>${text}</p><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul></article>`}
+  function serviceSummary(title,text,k1,k2){ return `<div class="service-card"><h4>${title}</h4><p>${text}</p><div class="service-kpis"><div><small>Live detail</small><b>${k1}</b></div><div><small>Extra</small><b>${k2}</b></div></div></div>`; }
+  function jobCard(t){ return `<article class="job-card"><span class="tag ${t.priority==='High'?'live':'upcoming'}">${t.priority}</span><h4>${t.title}</h4><p>${t.why}</p><div class="job-meta"><div><small>Where</small><b>${t.where}</b></div><div><small>By when</small><b>${t.by}</b></div><div><small>Need</small><b>${t.need}</b></div><div><small>Status</small><b>${t.status}</b></div></div><div class="job-actions"><button class="btn btn-soft" data-action="task-detail" data-task="${t.id}">Open details</button><button class="btn btn-dark" data-action="map">Show work area</button></div></article>`; }
 
-  function renderRoleGate(){
-    const e=selectedEvent();
-    app.innerHTML=`<div class="auth-wrap"><aside class="auth-side"><div>${brand(true)}</div><div>${statusPill(e.status)}<h2>${e.name}</h2><p>${e.venue} · ${e.city}<br>${e.date} · ${e.time}<br><br>Event ID · ${e.eventId}</p></div><button class="btn btn-light" id="backLanding">← Back to events</button></aside><main class="auth-main"><div class="auth-box"><span class="eyebrow">Open this event</span><h2 style="font-size:36px;letter-spacing:-.05em;margin:10px 0 7px">How are you joining?</h2><p class="muted">Choose your role. The demo opens instantly, or you can sign in with a local browser account.</p><div class="roles-grid" style="grid-template-columns:1fr;margin-top:20px">${roleGateCard('attendee','Attendee','I am visiting this event','See my ticket, what is live, food, stay, help and directions.')}${roleGateCard('operator','Operator','I am working at this event','See my jobs, work area, travel flow and service status.')}${roleGateCard('management','Event Management','I am running this event','See the full event from planning to exit and report.')}</div></div></main></div>`;
-    $('#backLanding').onclick=()=>{state.view='landing';render()};
-    $$('[data-demo-role]').forEach(b=>b.onclick=()=>demoLogin(b.dataset.demoRole));
-    $$('[data-sign-role]').forEach(b=>b.onclick=()=>{state.role=b.dataset.signRole;state.authMode='signin';state.view='auth';render()});
+  function movementMap(){ return navigation(); }
+
+  function servicesPage(){
+    const ev=e();
+    return `<section class="page"><div class="page-head"><div><h2>Food, stay, travel and parking</h2><p>EventFlow does not stop at the venue gate. It keeps the guest moving before, during and after the event.</p></div></div>
+      <div class="grid3">${ev.parking.map(p=>serviceSummary(p.name,`${p.road} · ${p.note}`,`${p.total-p.used} free`,`${p.walk} walk`)).join('')}</div>
+      <div class="grid2" style="margin-top:14px"><div class="panel"><div class="section-label">Food & stores</div><table class="table"><thead><tr><th>Place</th><th>Crowd</th><th>Wait</th><th>Status</th></tr></thead><tbody>${ev.food.map(f=>`<tr><td>${f.name}</td><td>${f.crowd}%</td><td>${f.wait}</td><td>${f.status}</td></tr>`).join('')}</tbody></table></div><div class="panel"><div class="section-label">Hotels & stay</div><table class="table"><thead><tr><th>Hotel</th><th>Distance</th><th>Rooms</th><th>Price</th></tr></thead><tbody>${ev.hotels.map(h=>`<tr><td>${h.name}<small>${h.travel}</small></td><td>${h.distance}</td><td>${h.rooms}</td><td>${h.price}</td></tr>`).join('')}</tbody></table></div></div>
+      <div class="panel" style="margin-top:14px"><div class="section-label">Travel out</div><table class="table"><thead><tr><th>Option</th><th>Load</th><th>Next</th><th>Note</th></tr></thead><tbody>${ev.transport.map(t=>`<tr><td>${t.name}</td><td>${t.load}%</td><td>${t.next}</td><td>${t.detail}</td></tr>`).join('')}</tbody></table></div>
+    </section>`;
   }
-  function roleGateCard(role,title,sub,text){return `<article class="role-card" style="padding:18px"><small class="muted" style="font-size:9px;font-weight:900">${sub.toUpperCase()}</small><h3 style="font-size:21px;margin-top:8px">${title}</h3><p>${text}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" data-demo-role="${role}">Try demo</button><button class="btn btn-light btn-sm" data-sign-role="${role}">Sign in</button></div></article>`}
 
-  function renderAuth(){
-    const e=selectedEvent(),signup=state.authMode==='signup';
-    app.innerHTML=`<div class="auth-wrap"><aside class="auth-side"><div>${brand(true)}</div><div><span class="pill pill-dark">${roleName(state.role)}</span><h2>${signup?'Create your account.':'Welcome back.'}</h2><p>${e.name}<br>${e.eventId}<br><br>Local browser demo. No database is connected.</p></div><button class="btn btn-light" id="backRole">← Back</button></aside><main class="auth-main"><div class="auth-box"><div class="auth-tabs"><button class="auth-tab ${!signup?'active':''}" data-mode="signin">Sign in</button><button class="auth-tab ${signup?'active':''}" data-mode="signup">Create account</button></div><form id="authForm">${signup?'<div class="field"><label>Your name</label><input id="name" class="control" required placeholder="Enter your name"></div>':''}<div class="field"><label>Email</label><input id="email" type="email" class="control" required placeholder="name@example.com"></div><div class="field"><label>Password</label><input id="password" type="password" minlength="4" class="control" required placeholder="At least 4 characters"></div>${signup?`<div class="field"><label>Choose your role</label><div class="role-pick">${['attendee','operator','management'].map(r=>`<button type="button" class="role-choice ${state.role===r?'active':''}" data-role="${r}"><b>${roleName(r)}</b><span>${r==='attendee'?'Visit events':r==='operator'?'Work on events':'Run events'}</span></button>`).join('')}</div></div>`:''}<button class="btn btn-primary btn-block" type="submit">${signup?'Create account':'Sign in'}</button></form><div style="text-align:center;font-size:10px;color:var(--muted);margin:14px">OR</div><button class="btn btn-dark btn-block" id="demoLogin">Use ${roleName(state.role)} demo</button></div></main></div>`;
-    $('#backRole').onclick=()=>{state.view='role';render()};
-    $$('[data-mode]').forEach(b=>b.onclick=()=>{state.authMode=b.dataset.mode;render()});
-    $$('[data-role]').forEach(b=>b.onclick=()=>{state.role=b.dataset.role;render()});
-    $('#demoLogin').onclick=()=>demoLogin(state.role);
-    $('#authForm').onsubmit=handleAuth;
+  function tasksPage(){
+    const all=read(STORE.tasks,TASKS); const list=all.filter(t=>t.event===state.eventId); const selected=all.find(t=>t.id===state.selectedTask)||list[0];
+    return `<section class="page"><div class="page-head"><div><h2>${state.role==='operator'?'Your event jobs':'Teams & jobs'}</h2><p>Every job has a clear place, reason, deadline, route and steps. Operators should never receive only “do this”.</p></div></div><div class="grid2"><div>${list.map(jobCard).join('')}</div><div class="panel">${selected?taskDetail(selected):'<p>No task selected.</p>'}</div></div></section>`;
   }
-  function handleAuth(ev){ev.preventDefault();const users=read(DB.users,[]),email=$('#email').value.trim().toLowerCase(),password=$('#password').value;if(state.authMode==='signup'){if(users.some(u=>u.email===email))return toast('Account already exists','Please sign in instead.');const u={id:'u'+Date.now(),name:$('#name').value.trim(),email,password,role:state.role};users.push(u);write(DB.users,users);startSession(u)}else{const u=users.find(x=>x.email===email&&x.password===password);if(!u)return toast('Sign in failed','Check your email and password.');startSession(u)}}
-  function demoLogin(role){const u=read(DB.users,[]).find(x=>x.role===role)||{id:'demo-'+role,name:'Demo User',email:'demo@eventflow.local',role};startSession(u)}
-  function startSession(u){state.session={id:u.id,name:u.name,email:u.email,role:u.role};write(DB.session,state.session);state.view='app';state.tab='overview';state.pass=null;render()}
-  function logout(){localStorage.removeItem(DB.session);state.session=null;state.view='landing';state.tab='overview';render()}
+  function taskDetail(t){ return `<div class="section-label">${t.id} · ${t.priority} priority</div><h3 style="font-size:22px">${t.title}</h3><p>${t.why}</p><div class="job-meta"><div><small>Where</small><b>${t.where}</b></div><div><small>By when</small><b>${t.by}</b></div><div><small>Need</small><b>${t.need}</b></div><div><small>Route</small><b>${t.route}</b></div></div><div class="section-label" style="margin-top:20px">How to do it</div><ol style="color:#aebed0;font-size:10px;line-height:1.8;padding-left:18px">${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="job-actions"><button class="btn btn-primary" data-action="task-status" data-task="${t.id}" data-status="Accepted">Accept</button><button class="btn btn-dark" data-action="task-status" data-task="${t.id}" data-status="Working">Start work</button><button class="btn btn-soft" data-action="task-status" data-task="${t.id}" data-status="Done">Mark done</button><button class="btn btn-dark" data-action="map">Show on map</button></div>`; }
 
-  function appHeader(){const e=selectedEvent();return `<header class="app-header"><div class="container app-head-inner">${brand()}<div class="event-switch">${statusPill(e.status)}<select id="eventSwitch" class="control" aria-label="Choose event">${EVENTS.map(x=>`<option value="${x.id}" ${x.id===e.id?'selected':''}>${x.name}</option>`).join('')}</select></div><div class="user-chip"><div class="avatar">${(state.session.name||'U')[0]}</div><div class="user-text"><b style="font-size:11px;display:block">${state.session.name}</b><span style="font-size:9px;color:var(--muted)">${roleName(state.session.role)}</span></div><button class="icon-btn" id="logoutBtn" title="Sign out">↗</button></div></div></header>`}
-  function bindHeader(){if($('#eventSwitch'))$('#eventSwitch').onchange=e=>{state.selectedEvent=e.target.value;state.pass=null;state.tab='overview';render()};if($('#logoutBtn'))$('#logoutBtn').onclick=logout}
-  function tabs(items){return `<div class="tabs">${items.map(([id,label])=>`<button class="tab ${state.tab===id?'active':''}" data-tab="${id}">${label}</button>`).join('')}</div>`}
-  function bindTabs(){$$('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()})}
-  function renderApp(){if(!state.session){state.view='landing';return renderLanding()}if(state.session.role==='attendee')renderAttendee();else if(state.session.role==='operator')renderOperator();else renderManagement()}
+  function reportsPage(){
+    const ev=e();
+    return `<section class="page"><div class="page-head"><div><h2>Event reports</h2><p>A clear summary of guest movement, service pressure and team response.</p></div></div><div class="stats"><div class="stat"><small>Event health</small><b>${ev.health}/100</b><span>Overall event flow</span></div><div class="stat"><small>Guest load</small><b>${Math.round(ev.inside/ev.capacity*100)}%</b><span>Venue occupancy</span></div><div class="stat"><small>Best gate</small><b>${bestGate(ev)}</b><span>${ev.gates[bestGate(ev)]}% pressure</span></div><div class="stat"><small>Food wait</small><b>${bestFood(ev).wait}</b><span>Best available food zone</span></div></div><div class="grid2"><div class="panel"><div class="section-label">Gate pressure</div><div class="crowd-bars">${Object.entries(ev.gates).map(([k,v])=>`<div class="crowd-row"><span>${k}</span><div class="meter"><i style="width:${v}%;background:${crowdColor(v)}"></i></div><b>${v}%</b></div>`).join('')}</div></div><div class="panel"><div class="section-label">Event program</div><div class="timeline">${timelineRows(ev)}</div></div></div></section>`;
+  }
 
-  // ATTENDEE
-  function renderAttendee(){const e=selectedEvent(),ready=!!state.pass;app.innerHTML=`<div class="app-shell">${appHeader()}<main class="page"><div class="container"><div class="page-head"><div><span class="eyebrow">Attendee · ${e.eventId}</span><h1>${ready?'Your event, from start to finish.':'Start with your ticket.'}</h1><p>${ready?'See what is live, choose what you need and EventFlow will guide you step by step.':'Enter your ticket number. Your event pass and personal event flow will open here.'}</p></div>${statusPill(e.status)}</div>${ready?tabs([['overview','Happening Now'],['journey','My Full Journey'],['map','3D Guide'],['services','Food & Stay'],['help','Help']]):''}<div>${ready?attendeeTab(e):ticketEntry(e)}</div></div></main></div>`;bindHeader();if(ready){bindTabs();bindAttendee(e)}else{if($('#ticketForm'))$('#ticketForm').onsubmit=createPass;if($('#demoPass'))$('#demoPass').onclick=()=>{state.pass=passFromTicket('DEMO-2609');state.tab='overview';render()}}}
-  function ticketEntry(e){return `<div class="ticket-box"><section class="panel ticket-entry"><span class="pill">STEP 1</span><h2 style="font-size:34px;letter-spacing:-.05em;margin:14px 0 8px">Enter your ticket number.</h2><p class="muted" style="line-height:1.65">EventFlow uses it to create a demo pass, entry gate, seat or zone and your full event journey.</p><form id="ticketForm"><div class="field"><label>Ticket number</label><input id="ticketNo" class="control" required placeholder="Example: EF-42819"></div><button class="btn btn-primary btn-block" type="submit">Open my event pass →</button></form><button id="demoPass" class="btn btn-light btn-block" style="margin-top:10px">Use demo ticket</button></section><aside class="pass-card"><div class="pass-head"><div><small style="color:rgba(255,255,255,.5)">${e.type.toUpperCase()}</small><h3 style="font-size:27px;margin:7px 0">${e.name}</h3><span style="font-size:11px;color:rgba(255,255,255,.6)">${e.venue} · ${e.date}</span></div><span class="pill pill-dark">PASS PREVIEW</span></div><div style="position:relative;z-index:2;margin-top:68px"><div class="journey-band"><div class="journey-dot">1</div><div><b>See what is live now</b><span>Current activity and next useful step</span></div></div><div class="journey-band"><div class="journey-dot">2</div><div><b>Choose what you need</b><span>Seat, food, washroom, medical, stay or exit</span></div></div><div class="journey-band"><div class="journey-dot">3</div><div><b>Open 3D guide only if needed</b><span>See the gate and path clearly</span></div></div></div></aside></div>`}
-  function createPass(ev){ev.preventDefault();const no=$('#ticketNo').value.trim();if(no.length<3)return toast('Ticket number is too short','Enter a valid demo ticket number.');state.pass=passFromTicket(no);state.tab='overview';render();toast('Pass ready','Your full event flow is open.')}
-  function hash(s){return [...s].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,7)}
-  function passFromTicket(no){const e=selectedEvent(),h=Math.abs(hash(no));return {ticket:no.toUpperCase(),block:e.id==='cricket'?'Block '+String.fromCharCode(65+h%4)+(10+h%8):e.id==='concert'?'Standing Zone '+String.fromCharCode(65+h%4):e.id==='expo'?'Hall '+(1+h%3):'Zone '+String.fromCharCode(65+h%5),row:'R'+(1+h%18),seat:1+h%40,gate:cap(bestGate(e))+' Gate',stay:e.multiDay||e.duration>7}}
-  function attendeeTab(e){if(state.tab==='journey')return attendeeJourney(e);if(state.tab==='map')return attendeeMap(e);if(state.tab==='services')return attendeeServices(e);if(state.tab==='help')return attendeeHelp(e);return attendeeNow(e)}
-  function attendeeNow(e){const p=state.pass;return `<div class="grid-2"><section><div class="now-hero"><span class="pill pill-dark">HAPPENING NOW</span><h2 style="font-size:31px;letter-spacing:-.045em;margin:13px 0 7px">${e.phase}</h2><p>${e.next}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><span class="pill pill-dark">Best gate · ${p.gate}</span><span class="pill pill-dark">Event health · ${e.health}%</span></div></div><div class="section-label"><div><h3>What do you want to do?</h3><p>Choose one thing. We will show only the useful information.</p></div></div><div class="activity-grid">${attendeeActivities(e).map(a=>`<button class="activity" data-go="${a.id}"><div class="activity-icon">${a.icon}</div><b>${a.title}</b><span>${a.status} · ${a.text}</span></button>`).join('')}</div></section><aside><div class="pass-card"><div class="pass-head"><div><small style="color:rgba(255,255,255,.5)">YOUR EVENT PASS</small><h3 style="font-size:22px;margin:6px 0">${e.name}</h3><span style="font-size:10px;color:rgba(255,255,255,.55)">${p.ticket}</span></div><span class="pill pill-dark">ACTIVE</span></div><div class="pass-seat"><div><small>ZONE</small><strong>${p.block}</strong></div><div><small>ROW</small><strong>${p.row}</strong></div><div><small>SEAT</small><strong>${p.seat}</strong></div></div><div style="position:relative;z-index:2;margin-top:20px"><small style="font-size:8px;color:rgba(255,255,255,.5)">EASIER ENTRY RIGHT NOW</small><strong style="display:block;font-size:19px;margin-top:5px">${p.gate}</strong></div></div><div class="panel" style="margin-top:14px"><h3 style="margin-top:0">Your quick status</h3>${statusRow('Food wait',bestFood(e)[2])}${statusRow('Medical help','Open')}${statusRow('Stay',p.stay?'Recommended / booked':'Not needed for this short event')}${statusRow('Exit plan','Ready')}</div></aside></div>`}
-  function attendeeActivities(e){const primary=e.id==='cricket'?['seat','My seat','Live now','Go to your block and seat.']:e.id==='concert'?['stage','Main stage','Live now','The headline show is running.']:e.id==='expo'?['stage','Robotics Hall','Live now','Demos are running in Hall 2.']:['food','Food Street','Live now','Food and culture areas are open.'];return [{id:primary[0],icon:'01',title:primary[1],status:primary[2],text:primary[3]},{id:'food',icon:'02',title:'Food & drinks',status:'Open',text:'Find a lower-wait food point.'},{id:'washroom',icon:'03',title:'Washroom',status:'Open',text:'Find the nearest open washroom.'},{id:'medical',icon:'04',title:'Medical help',status:'Ready',text:'Find the nearest medical point.'},{id:'parking',icon:'05',title:'Pickup / parking',status:'Live',text:'See pickup, shuttle and parking.'},{id:'exit',icon:'06',title:'Exit / travel',status:'Plan ahead',text:'See the easier way out.'}]}
-  function bindAttendee(e){$$('[data-go]').forEach(b=>b.onclick=()=>{state.mapDestination=b.dataset.go;state.tab='map';render()});if(state.tab==='map')setTimeout(()=>initMap('attendeeMap',e,state.mapDestination||'seat','attendee'),80)}
-  function attendeeJourney(e){const p=state.pass;const steps=[['Before event','Check ticket, travel time and best arrival window','done'],['Arrival','Use '+p.gate+' and follow the entry signs','done'],['Inside now',e.phase,'live'],['Food & facilities','Use EventFlow when you need food, water, washroom or medical help','next']];if(p.stay)steps.push(['Stay','Your event is long / multi-day. Check your stay and shuttle before the day ends','next']);steps.push(['Exit','Check the easier exit before the event ends','next'],['After event','Use pickup, parking, metro or hotel shuttle','next']);return `<div class="grid-2"><section class="panel"><span class="eyebrow">End-to-end journey</span><h2 style="font-size:27px;letter-spacing:-.04em">From arrival to exit.</h2><div class="journey-card">${steps.map(s=>`<div class="journey-step ${s[2]}"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('')}</div></section><aside class="panel"><h3>What comes next?</h3><p class="muted">${e.next}</p><div style="margin-top:18px">${statusRow('Best entry',p.gate)}${statusRow('Best food',bestFood(e)[0])}${statusRow('Pickup plan','Parking P3 / shuttle')}${statusRow('Stay',p.stay?e.hotels[0][0]:'Not required')}</div></aside></div>`}
-  function attendeeMap(e){const d=state.mapDestination||'seat';return `<div><div class="panel" style="margin-bottom:14px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap"><div><span class="eyebrow">3D EVENT GUIDE</span><h3 style="font-size:23px;margin:6px 0">Going to ${poiLabel(e,d)}</h3><p class="muted" style="margin:0">${mapInstruction(e,d)}</p></div><button class="btn btn-light" data-tab="overview">← Choose another place</button></div>${mapContainer('attendeeMap',e,d,'attendee')}</div>`}
-  function attendeeServices(e){const p=state.pass;return `<div class="grid-2"><section class="panel"><span class="eyebrow">Food & comfort</span><h2 style="font-size:27px;letter-spacing:-.04em">Choose a lower-wait option.</h2><div class="service-grid" style="grid-template-columns:1fr 1fr">${e.food.map(f=>serviceCard(f[0],`${f[1]}% busy`,`${f[2]} wait`,f[1])).join('')}</div></section><aside class="panel"><span class="eyebrow">Stay</span><h3 style="font-size:23px">${p.stay?'Stay support is part of your event.':'This is a short event.'}</h3><p class="muted">${p.stay?'Because this event is long or multi-day, EventFlow keeps stay, room availability and hotel transport in your journey.':'You do not need a stay step for a 3–5 hour event. Nearby hotels are still shown if you need one.'}</p>${e.hotels.slice(0,3).map(h=>`<div class="status-row"><div><b>${h[0]}</b><span>${h[1]} · ${h[3]}</span></div><strong style="font-size:11px">${h[2]} rooms left</strong></div>`).join('')}</aside></div>`}
-  function attendeeHelp(){return `<div class="service-grid">${[['Medical help','Open now','Get the nearest medical point and route.'],['Guest help desk','Open now','Ticket, seat, accessibility and lost-item help.'],['Food & water','Live status','See lower-wait food and water points.'],['Washrooms','Open','Find the nearest open washroom.'],['Security help','Ready','Ask for security or safety support.'],['Exit & pickup','Live','Get the smoother exit and travel step.']].map(x=>serviceCard(x[0],x[1],x[2],40)).join('')}</div>`}
+  function mainContent(){
+    if(state.tab==='events') return eventsPage();
+    if(state.role==='attendee'){
+      if(state.tab==='journey') return attendeeJourney();
+      if(state.tab==='navigate') return navigation();
+      if(state.tab==='services') return servicesPage();
+    }
+    if(state.tab==='overview') return controlRoom(state.role);
+    if(state.tab==='map') return movementMap();
+    if(state.tab==='tasks') return tasksPage();
+    if(state.tab==='services') return servicesPage();
+    if(state.tab==='journey') return attendeeJourney();
+    if(state.tab==='reports') return reportsPage();
+    return eventsPage();
+  }
 
-  // OPERATOR
-  function renderOperator(){const e=selectedEvent();app.innerHTML=`<div class="app-shell">${appHeader()}<main class="page"><div class="container"><div class="page-head"><div><span class="eyebrow">Operator</span><h1>Your events and work.</h1><p>See the event, the exact job, where it is, why it matters, what you need and how to finish it.</p></div><span class="pill pill-live">${EVENTS.filter(x=>x.status==='live').length} live events</span></div>${tabs([['overview','My Events'],['tasks','My Tasks'],['map','3D Work Map'],['travel','People & Travel'],['services','Food & Stay'],['assets','Team & Assets']])}${operatorTab(e)}</div></main></div>`;bindHeader();bindTabs();bindOperator(e)}
-  function operatorTab(e){if(state.tab==='tasks')return operatorTasks(e);if(state.tab==='map')return `<div>${mapContainer('operatorMap',e,state.mapDestination||'gate','operator')}</div>`;if(state.tab==='travel')return travelView(e,'operator');if(state.tab==='services')return serviceOpsView(e);if(state.tab==='assets')return assetsView(e);return operatorOverview()}
-  function operatorOverview(){const assigned=EVENTS.filter(e=>e.status==='live'||e.status==='upcoming').slice(0,6);return `<div><div class="section-label"><div><h3>Events assigned to your team</h3><p>Open one event to see its jobs and live status.</p></div></div><div class="event-board">${assigned.map(e=>boardCard(e,true)).join('')}</div></div>`}
-  function operatorTasks(e){const tasks=tasksFor(e.id);return `<div><div class="panel panel-dark" style="margin-bottom:14px"><span class="pill pill-dark">${e.eventId}</span><h2 style="font-size:27px;margin:14px 0 6px">${e.name}</h2><p style="margin:0">Current event moment: ${e.phase}. Your jobs below are connected to this event only.</p></div>${tasks.map(taskCard).join('')}</div>`}
-  function taskCard(t){return `<article class="task-card"><div class="task-top"><div><span class="pill ${t.priority==='High'?'pill-red':''}">${t.priority.toUpperCase()}</span><h3>${t.title}</h3><p>${t.why}</p></div><span class="pill">${t.status}</span></div><div class="task-details">${taskCell('WHERE',t.where)}${taskCell('WHAT TO DO',t.action)}${taskCell('BY WHEN',t.due)}${taskCell('YOU NEED',t.need)}</div><div class="task-steps"><small>HOW TO DO IT</small><ol>${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:13px"><button class="btn btn-dark btn-sm" data-task-map="${t.id}">Show work area in 3D</button>${nextTaskButton(t)}</div></article>`}
-  function nextTaskButton(t){const next=t.status==='New'||t.status==='Ready'?'Accepted':t.status==='Accepted'?'Working':t.status==='Working'?'Done':null;return next?`<button class="btn btn-primary btn-sm" data-task-next="${t.id}" data-next="${next}">${next==='Accepted'?'Accept job':next==='Working'?'Start work':'Mark done'}</button>`:'<span class="pill pill-live">DONE</span>'}
-  function bindOperator(e){$$('[data-open-board]').forEach(b=>b.onclick=()=>{state.selectedEvent=b.dataset.openBoard;state.tab='tasks';render()});$$('[data-task-map]').forEach(b=>b.onclick=()=>{const t=taskById(b.dataset.taskMap);state.mapDestination=taskToPoi(t);state.tab='map';render()});$$('[data-task-next]').forEach(b=>b.onclick=()=>updateTask(b.dataset.taskNext,b.dataset.next));if(state.tab==='map')setTimeout(()=>initMap('operatorMap',e,state.mapDestination||'gate','operator'),80)}
-  function travelView(e){return `<div class="grid-2"><section class="panel"><span class="eyebrow">Arrival & departure</span><h2 style="font-size:27px;letter-spacing:-.04em">How people are reaching the event.</h2><div class="bar-list" style="margin-top:20px">${Object.entries(e.travel).map(([k,v])=>barRow(cap(k),v)).join('')}</div><div class="section-label"><div><h3>Gate load</h3></div></div>${Object.entries(e.crowd).map(([g,v])=>statusRow(cap(g)+' Gate',`${v}% · ${crowdWord(v)}`)).join('')}</section><aside class="panel"><h3>Live movement</h3>${statusRow('Arrivals',e.arrivals)}${statusRow('Exits',e.exits)}${statusRow('Easier gate',cap(bestGate(e))+' Gate')}${statusRow('Busy parking',e.parking.sort((a,b)=>b[1]-a[1])[0][0])}<div class="message-card" style="margin-top:18px"><b>Operator note</b><p>Use the 3D Work Map when your job is tied to a gate, route, food area, hotel pickup or parking point.</p></div></aside></div>`}
-  function serviceOpsView(e){return `<div class="grid-2"><section class="panel"><span class="eyebrow">Food service</span><h2 style="font-size:27px">Queues and readiness.</h2><div class="service-grid" style="grid-template-columns:1fr 1fr">${e.food.map(f=>serviceCard(f[0],`${f[1]}% busy`,`${f[2]} wait`,f[1])).join('')}</div></section><aside class="panel"><span class="eyebrow">Stay & rooms</span><h3 style="font-size:23px">Hotel availability for this event.</h3>${e.hotels.map(h=>statusRow(h[0],`${h[2]} rooms left · ${h[1]}`)).join('')}</aside></div>`}
-  function assetsView(e){return `<div class="grid-3">${serviceCard('Gate team','38 staff ready','6 lanes active',62)}${serviceCard('Shuttle fleet','12 vehicles','9 active · 3 free',75)}${serviceCard('Medical team','4 units ready','2 mobile teams',48)}${serviceCard('Guest help','8 staff','3 help points',42)}${serviceCard('Security','64 staff','All zones covered',68)}${serviceCard('Food support','46 staff','4 overflow counters',58)}</div>`}
+  function render(){
+    if(state.screen==='landing') app.innerHTML=landing();
+    else if(state.screen==='auth') app.innerHTML=auth();
+    else app.innerHTML=appShell(mainContent());
+    bind();
+  }
 
-  // MANAGEMENT
-  function renderManagement(){const e=selectedEvent();app.innerHTML=`<div class="app-shell">${appHeader()}<main class="page"><div class="container"><div class="page-head"><div><span class="eyebrow">Event Management</span><h1>Run every event from one place.</h1><p>Live, upcoming and completed events. Guests, travel, food, stay, spaces, operators, messages, safety and reports—all connected.</p></div><span class="pill">${EVENTS.length} events</span></div>${tabs([['overview','All Events'],['control','Live Control'],['guests','Guest Journey'],['travel','Travel & Crowd'],['services','Stay & Food'],['team','Teams & Jobs'],['map','3D Operations'],['reports','Reports']])}${managementTab(e)}</div></main></div>`;bindHeader();bindTabs();bindManagement(e)}
-  function managementTab(e){if(state.tab==='control')return controlView(e);if(state.tab==='guests')return guestJourneyView(e);if(state.tab==='travel')return travelView(e,'management');if(state.tab==='services')return managementServices(e);if(state.tab==='team')return teamView(e);if(state.tab==='map')return mapContainer('managementMap',e,state.mapDestination||'gate','management');if(state.tab==='reports')return reportsView(e);return allEventsView()}
-  function allEventsView(){const list=EVENTS.filter(e=>state.eventFilter==='all'||e.status===state.eventFilter);return `<div><div class="filter-row">${[['all','All'],['live','Live'],['upcoming','Upcoming'],['done','Completed']].map(x=>`<button class="filter-btn ${state.eventFilter===x[0]?'active':''}" data-filter="${x[0]}">${x[1]} · ${x[0]==='all'?EVENTS.length:EVENTS.filter(e=>e.status===x[0]).length}</button>`).join('')}</div><div class="event-board">${list.map(e=>boardCard(e,false)).join('')}</div></div>`}
-  function boardCard(e,operator=false){return `<article class="board-card" style="--event:${e.color}"><div class="board-head">${statusPill(e.status)}<span class="event-id">${e.eventId}</span></div><h3>${e.name}</h3><p>${e.venue} · ${e.date}<br>${e.phase}</p><div class="board-meta"><div class="meta-box"><small>${e.status==='live'?'Inside':'Expected'}</small><b>${fmt(e.status==='live'?e.inside:e.expected)}</b></div><div class="meta-box"><small>Event health</small><b>${e.health}%</b></div></div><button class="btn btn-dark btn-block btn-sm" data-open-board="${e.id}">${operator?'Open my jobs':'Open event control'} →</button></article>`}
-  function controlView(e){return `<div><div class="panel panel-dark" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><span class="pill pill-dark">${e.eventId}</span><h2 style="font-size:31px;letter-spacing:-.045em;margin:13px 0 6px">${e.name}</h2><p style="margin:0">${e.venue} · ${e.date} · ${e.time}</p></div>${statusPill(e.status)}</div></div><div class="grid-4"><div class="big-kpi violet"><small>Event health</small><strong>${e.health}%</strong><span>Overall live condition</span></div><div class="big-kpi teal"><small>Guests inside</small><strong>${fmt(e.inside)}</strong><span>of ${fmt(e.expected)} expected</span></div><div class="big-kpi coral"><small>Busy gate</small><strong>${cap(busiestGate(e))}</strong><span>${e.crowd[busiestGate(e)]}% crowd</span></div><div class="big-kpi ink"><small>Open team jobs</small><strong>${tasksFor(e.id).filter(t=>t.status!=='Done').length}</strong><span>connected to this event</span></div></div><div class="grid-2" style="margin-top:14px"><section class="panel"><span class="eyebrow">Event flow</span><h2 style="font-size:27px;letter-spacing:-.04em">What is happening from start to exit.</h2>${e.schedule.map((s,i)=>`<div class="flow-line ${s[2]==='live'?'live':''}"><div class="flow-num">${i+1}</div><div><b>${s[1]}</b><span>${s[2]==='live'?'This is the current event moment.':s[2]==='done'?'Completed.':'Coming next.'}</span></div><time>${s[0]}</time></div>`).join('')}</section><aside class="panel"><span class="eyebrow">Live situation</span><h3 style="font-size:23px">What needs attention now.</h3>${statusRow('Current activity',e.phase)}${statusRow('Next change',e.next)}${statusRow('Arrivals',e.arrivals)}${statusRow('Easier gate',cap(bestGate(e))+' Gate')}<div class="message-card" style="margin-top:16px"><b>Suggested action</b><p>Keep the easier gate visible to arriving guests and prepare the next food / exit rush before it starts.</p></div><button class="btn btn-primary btn-block btn-sm" data-open-map="gate" style="margin-top:10px">Open 3D operations map</button></aside></div></div>`}
-  function guestJourneyView(e){const long=e.multiDay||e.duration>7;return `<div class="grid-2"><section class="panel"><span class="eyebrow">Guest journey</span><h2 style="font-size:27px">End-to-end view for one attendee.</h2><div class="journey-card">${[['Before arrival','Ticket, event time, travel mode and arrival window','done'],['Arrival','Transport → best gate → security / check-in','done'],['Inside event',e.phase,'live'],['Food & facilities','Food, water, washroom, medical, help and rest areas','next'],...(long?[['Stay','Room, hotel transport and next-day event plan','next']]:[]),['Exit','Best exit, crowd release and pickup / metro / parking','next'],['After event','Stay or final travel home','next']].map(s=>`<div class="journey-step ${s[2]}"><b>${s[0]}</b><span>${s[1]}</span></div>`).join('')}</div></section><aside class="panel"><span class="eyebrow">Guest interest</span><h3 style="font-size:23px">Where people are spending time.</h3><div class="bar-list">${e.engagement.map(x=>barRow(x[0],x[1])).join('')}</div><div class="section-label"><div><h3>Guest messages</h3></div></div>${[['Arrival','East Gate is easier right now.'],['Food','East Food Street has a shorter wait.'],['Exit','Check your exit 20 minutes before the event ends.']].map(x=>`<div class="message-card"><b>${x[0]}</b><p>${x[1]}</p></div>`).join('')}</aside></div>`}
-  function managementServices(e){return `<div><div class="grid-2"><section class="panel"><span class="eyebrow">Food & water</span><h2 style="font-size:27px">Service pressure.</h2><div class="service-grid" style="grid-template-columns:1fr 1fr">${e.food.map(f=>serviceCard(f[0],`${f[1]}% busy`,`${f[2]} wait`,f[1])).join('')}</div></section><aside class="panel"><span class="eyebrow">Stay & accommodation</span><h3 style="font-size:23px">Rooms and event stay support.</h3><p class="muted">${e.multiDay||e.duration>7?'This event needs active stay planning because it is long or multi-day.':'Stay is optional for this shorter event, but room status is still available for outstation guests.'}</p>${e.hotels.map(h=>statusRow(h[0],`${h[2]} rooms left · ${h[1]} · ${h[3]}`)).join('')}</aside></div><div class="section-label"><div><h3>Other guest services</h3><p>Every service that can affect the event experience.</p></div></div><div class="service-grid">${serviceCard('Washrooms','12 open','2 being cleaned',44)}${serviceCard('Medical points','4 ready','2 mobile units',32)}${serviceCard('Water points','9 open','1 refill needed',55)}${serviceCard('Guest help','3 desks','8 staff ready',38)}${serviceCard('Rest areas','4 zones','62% free',38)}${serviceCard('Accessibility','6 routes','All open',25)}</div></div>`}
-  function teamView(e){return `<div class="grid-2"><section><div class="section-label"><div><h3>Operator jobs</h3><p>Every job has a place, reason, action, time and steps.</p></div></div>${tasksFor(e.id).map(taskCard).join('')}</section><aside class="panel"><span class="eyebrow">Teams & moving assets</span><h3 style="font-size:23px">Who is available right now.</h3>${statusRow('Security','64 staff · 12 free')}${statusRow('Guest help','8 staff · 3 desks')}${statusRow('Medical','4 units · 2 mobile')}${statusRow('Shuttles','12 vehicles · 3 free')}${statusRow('E-carts','8 vehicles · 2 free')}${statusRow('Food support','46 staff · 6 free')}<div class="message-card" style="margin-top:16px"><b>Operations idea</b><p>When an incident starts, the nearest free team or vehicle can be sent to the affected place.</p></div></aside></div>`}
-  function reportsView(e){return `<div class="grid-2"><section class="panel"><span class="eyebrow">Event performance</span><h2 style="font-size:27px">How the event is performing.</h2><div class="bar-list" style="margin-top:20px">${barRow('Guest flow',87)}${barRow('Travel',81)}${barRow('Food service',74)}${barRow('Team response',92)}${barRow('Stay readiness',e.multiDay?83:95)}${barRow('Guest experience',89)}</div></section><aside class="panel"><span class="eyebrow">What we learned</span><h3 style="font-size:23px">Useful data after the event.</h3>${statusRow('Peak arrival','6:05–6:35 PM')}${statusRow('Most used gate','East Gate')}${statusRow('Most visited area',e.engagement.sort((a,b)=>b[1]-a[1])[0][0])}${statusRow('Average food wait','9 min')}${statusRow('Average operator response','6 min')}${statusRow('Event health score',e.health+'%')}</aside></div>`}
-  function bindManagement(e){$$('[data-filter]').forEach(b=>b.onclick=()=>{state.eventFilter=b.dataset.filter;render()});$$('[data-open-board]').forEach(b=>b.onclick=()=>{state.selectedEvent=b.dataset.openBoard;state.tab='control';render()});$$('[data-open-map]').forEach(b=>b.onclick=()=>{state.mapDestination=b.dataset.openMap;state.tab='map';render()});$$('[data-task-map]').forEach(b=>b.onclick=()=>{const t=taskById(b.dataset.taskMap);state.mapDestination=taskToPoi(t);state.tab='map';render()});$$('[data-task-next]').forEach(b=>b.onclick=()=>updateTask(b.dataset.taskNext,b.dataset.next));if(state.tab==='map')setTimeout(()=>initMap('managementMap',e,state.mapDestination||'gate','management'),80)}
+  function bind(){
+    document.querySelectorAll('[data-action]').forEach(el=>el.addEventListener('click',()=>handle(el.dataset)));
+    const af=document.getElementById('auth-form'); if(af) af.addEventListener('submit',authSubmit);
+    const tf=document.getElementById('ticket-form'); if(tf) tf.addEventListener('submit',ticketSubmit);
+  }
 
-  // SHARED UI
-  function statusRow(label,val){return `<div class="status-row"><b>${label}</b><span>${val}</span></div>`}
-  function taskCell(label,val){return `<div class="task-cell"><small>${label}</small><b>${val}</b></div>`}
-  function barRow(label,val){return `<div class="bar-row"><b>${label}</b><div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,Math.min(100,val))}%"></div></div><strong>${val}%</strong></div>`}
-  function serviceCard(title,value,text,level){return `<article class="service-card"><small>${title.toUpperCase()}</small><strong>${value}</strong><p>${text}</p><div class="progress" style="margin-top:10px"><i style="width:${Math.max(8,Math.min(100,level))}%;background:${level>=80?C.red:level>=65?C.amber:level>=50?C.violet:C.teal}"></i></div></article>`}
-  function busiestGate(e){return Object.entries(e.crowd).sort((a,b)=>b[1]-a[1])[0][0]}
-  function bestFood(e){return [...e.food].sort((a,b)=>a[1]-b[1])[0]}
-  function tasksFor(eventId){return read(DB.tasks,[]).filter(t=>t.eventId===eventId)}
-  function taskById(id){return read(DB.tasks,[]).find(t=>t.id===id)}
-  function taskToPoi(t){if(!t)return'gate';const w=t.where.toLowerCase();if(w.includes('parking'))return'parking';if(w.includes('food'))return'food';if(w.includes('south'))return'south';if(w.includes('north'))return'north';if(w.includes('west'))return'west';if(w.includes('east'))return'east';return'gate'}
-  function updateTask(id,status){const tasks=read(DB.tasks,[]),t=tasks.find(x=>x.id===id);if(!t)return;t.status=status;write(DB.tasks,tasks);toast('Job updated',`${t.title} · ${status}`);render()}
+  function handle(d){
+    switch(d.action){
+      case 'auth': state.screen='auth'; render(); break;
+      case 'back-home': state.screen='landing'; render(); break;
+      case 'open-live': document.getElementById('live-events')?.scrollIntoView({behavior:'smooth'}); break;
+      case 'auth-role': state.authRole=d.role; render(); break;
+      case 'toggle-auth': state.authMode=state.authMode==='signin'?'signup':'signin'; render(); break;
+      case 'demo-attendee': loginDemo('attendee'); break;
+      case 'logout': localStorage.removeItem(STORE.session); session=null; state={...state,screen:'landing',role:'attendee',tab:'events'}; render(); break;
+      case 'tab': state.tab=d.tab; render(); break;
+      case 'events': state.tab='events'; render(); break;
+      case 'filter': state.filter=d.filter; render(); break;
+      case 'select-event': state.eventId=d.event; state.tab=state.role==='attendee'?'journey':'overview'; render(); break;
+      case 'go-event': state.eventId=d.event; state.tab='journey'; render(); break;
+      case 'journey': state.tab='journey'; render(); break;
+      case 'dest': state.destination=d.dest; state.tab='navigate'; render(); break;
+      case 'map': state.tab='map'; render(); break;
+      case 'clear-ticket': state.ticket=null; localStorage.removeItem(STORE.ticket); render(); break;
+      case 'task-detail': state.selectedTask=d.task; if(state.tab!=='tasks') state.tab='tasks'; render(); break;
+      case 'task-status': updateTask(d.task,d.status); break;
+    }
+  }
 
-  // 3D MAP
-  function mapContainer(id,e,destination,mode){return `<section class="map-shell"><div id="${id}" class="map3d"></div><div id="${id}Offline" class="offline-3d"><div class="iso-world"><div class="iso-road r1"></div><div class="iso-road r2"></div><div class="iso-block iso-stadium"></div><div class="iso-block iso-food"></div><div class="iso-block iso-hotel"></div><div class="iso-block iso-park"></div><i class="iso-marker m1"></i><i class="iso-marker m2"></i><i class="iso-marker m3"></i></div></div><div id="${id}Loading" class="map-loading"><div class="map-loading-box"><span class="pill pill-dark">3D EVENT MAP</span><h3>Loading real roads and 3D event places…</h3><p>If map tiles are blocked, EventFlow will show its built-in 3D venue model instead of a blank screen.</p></div></div><div class="map-hud"><div class="map-title"><b>${e.name}</b><span>${mode==='attendee'?'Guest route & event places':mode==='operator'?'Operator work area':'Live operations & crowd areas'} · ${e.eventId}</span></div><div class="map-tools"><button class="map-tool" data-rotate="${id}">Rotate 3D</button><button class="map-tool" data-reset="${id}">Reset</button></div></div><div class="map-legend"><span><i class="legend-dot" style="background:${C.green}"></i>Easy</span><span><i class="legend-dot" style="background:${C.amber}"></i>Medium</span><span><i class="legend-dot" style="background:${C.coral}"></i>Busy</span><span><i class="legend-dot" style="background:${C.red}"></i>Very busy</span></div><div class="map-detail" id="${id}Detail"><small>SELECTED PLACE</small><h3>${poiLabel(e,destination)}</h3><p>${mapInstruction(e,destination)}</p></div></section>`}
-  function initMap(id,e,destination,mode){const loading=$('#'+id+'Loading');if(!window.maplibregl){showOffline(id,'Map library could not load.');return}let loaded=false;let timer=setTimeout(()=>{if(!loaded)showOffline(id,'Map tiles are taking too long.')},9000);try{const map=new maplibregl.Map({container:id,style:'https://tiles.openfreemap.org/styles/liberty',center:e.center,zoom:16.2,pitch:62,bearing:-26,attributionControl:true,antialias:true});maps.push(map);map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'top-right');map.on('load',()=>{loaded=true;clearTimeout(timer);if(loading)loading.classList.add('hidden');add3DBuildings(map);addVenueModel(map,e);const pts=eventPoints(e);addMarkers(map,e,pts,id,mode);addRoute(map,e,destination,pts,mode);map.easeTo({center:routeCenter(e,destination,pts),zoom:16.45,pitch:64,bearing:-30,duration:900})});map.on('error',ev=>{const msg=String(ev?.error?.message||'');if(!loaded&&(msg.includes('Failed to fetch')||msg.includes('NetworkError')))showOffline(id,msg)});const rb=$(`[data-rotate="${id}"]`),zb=$(`[data-reset="${id}"]`);if(rb)rb.onclick=()=>map.easeTo({bearing:map.getBearing()+70,pitch:64,duration:700});if(zb)zb.onclick=()=>map.easeTo({center:e.center,zoom:16.2,pitch:62,bearing:-26,duration:700})}catch(err){clearTimeout(timer);showOffline(id,err.message)}}
-  function showOffline(id,reason){const loading=$('#'+id+'Loading'),offline=$('#'+id+'Offline');if(loading)loading.classList.add('hidden');if(offline)offline.classList.add('active');const detail=$('#'+id+'Detail');if(detail)detail.innerHTML=`<small>BUILT-IN 3D VENUE MODEL</small><h3>3D guide is still available</h3><p>Real map tiles could not load (${String(reason||'network issue').slice(0,90)}). This local 3D model prevents a blank map. Connect to the internet and refresh for real roads and buildings.</p>`}
-  function add3DBuildings(map){try{const layers=map.getStyle().layers||[];const b=layers.find(l=>l['source-layer']==='building'&&l.source);if(!b)return;const label=layers.find(l=>l.type==='symbol'&&l.layout&&l.layout['text-field']);if(!map.getLayer('ef-buildings'))map.addLayer({id:'ef-buildings',source:b.source,'source-layer':'building',type:'fill-extrusion',minzoom:14.5,paint:{'fill-extrusion-color':['interpolate',['linear'],['coalesce',['get','render_height'],10],0,'#d7d1c6',40,'#c8c1b5',120,'#aeb7c9'],'fill-extrusion-height':['coalesce',['get','render_height'],['get','height'],12],'fill-extrusion-base':['coalesce',['get','render_min_height'],0],'fill-extrusion-opacity':.82}},label?.id)}catch(err){console.warn('3D buildings',err)}}
-  function addVenueModel(map,e){try{const [lng,lat]=e.center;const rect=(cx,cy,w,h,p)=>({type:'Feature',properties:p,geometry:{type:'Polygon',coordinates:[[[cx-w,cy-h],[cx+w,cy-h],[cx+w,cy+h],[cx-w,cy+h],[cx-w,cy-h]]]}});const f=[];if(e.type==='Cricket'){f.push(rect(lng,lat+.00058,.00082,.00018,{h:28,c:'#6652dd'}),rect(lng,lat-.00058,.00082,.00018,{h:25,c:'#715ee5'}),rect(lng+.00078,lat,.00018,.00043,{h:30,c:'#806df0'}),rect(lng-.00078,lat,.00018,.00043,{h:22,c:'#5848c8'}),rect(lng,lat,.00054,.00031,{h:1,c:'#56a66f'}))}else if(e.type==='Music'){f.push(rect(lng-.00048,lat,.00024,.00055,{h:24,c:'#df4f62'}),rect(lng+.00025,lat+.00034,.0005,.0002,{h:7,c:'#6b5bdd'}),rect(lng+.00025,lat-.00034,.0005,.0002,{h:7,c:'#806ff0'}))}else{f.push(rect(lng-.00048,lat+.00028,.00034,.00024,{h:20,c:'#18b9aa'}),rect(lng+.00032,lat+.00028,.00034,.00024,{h:24,c:'#735cff'}),rect(lng-.00005,lat-.00038,.00056,.00021,{h:15,c:'#ff7358'}))}map.addSource('ef-venue',{type:'geojson',data:{type:'FeatureCollection',features:f}});map.addLayer({id:'ef-venue-3d',type:'fill-extrusion',source:'ef-venue',paint:{'fill-extrusion-color':['get','c'],'fill-extrusion-height':['get','h'],'fill-extrusion-opacity':.94}})}catch(err){console.warn('Venue model',err)}}
-  function eventPoints(e){const [lng,lat]=e.center,p=(x,y)=>[lng+x,lat+y];return {venue:{label:e.venue,coord:p(0,0),color:C.violet},north:{label:'North Gate',coord:p(0,.00148),color:crowdColor(e.crowd.north),crowd:e.crowd.north},east:{label:'East Gate',coord:p(.00155,.00012),color:crowdColor(e.crowd.east),crowd:e.crowd.east},south:{label:'South Gate',coord:p(.00008,-.00148),color:crowdColor(e.crowd.south),crowd:e.crowd.south},west:{label:'West Gate',coord:p(-.00155,-.0001),color:crowdColor(e.crowd.west),crowd:e.crowd.west},seat:{label:e.mainPlace,coord:p(.0002,.00012),color:C.violet},stage:{label:e.mainPlace,coord:p(.00018,.0001),color:C.violet},food:{label:'East Food Street',coord:p(.0010,.00072),color:C.teal},washroom:{label:'Washroom',coord:p(-.00072,-.0007),color:C.cyan},medical:{label:'Medical Help',coord:p(-.00102,.00064),color:C.red},parking:{label:'Parking P3 / Pickup',coord:p(.00215,-.0014),color:C.amber},exit:{label:'Suggested Exit',coord:p(-.00155,-.0001),color:C.green},stay:{label:e.hotels[0]?.[0]||'Nearby Stay',coord:p(.0026,.00155),color:C.coral},gate:{label:cap(bestGate(e))+' Gate',coord:gateCoord(e,p)}}}
-  function gateCoord(e,p){return {north:p(0,.00148),east:p(.00155,.00012),south:p(.00008,-.00148),west:p(-.00155,-.0001)}[bestGate(e)]}
-  function addMarkers(map,e,pts,id,mode){const keys=mode==='attendee'?['north','east','south','west','seat','stage','food','washroom','medical','parking','exit','stay']:['north','east','south','west','food','medical','parking','stay','venue'];keys.forEach(k=>{const pt=pts[k];if(!pt)return;const gate=['north','east','south','west'].includes(k),el=document.createElement('div');el.className=gate?'crowd-marker':'poi-marker';el.style.setProperty('--marker',pt.color);el.textContent=gate?pt.crowd+'%':markerText(k);el.title=pt.label;el.onclick=()=>{const d=$('#'+id+'Detail');if(d)d.innerHTML=`<small>${gate?'LIVE CROWD':'EVENT PLACE'}</small><h3>${pt.label}</h3><p>${gate?`${pt.crowd}% crowd · ${crowdWord(pt.crowd)} right now.`:`${pt.label} is part of this event flow.`}</p>`};new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(pt.coord).addTo(map)})}
-  function markerText(k){return {venue:'EV',seat:'S',stage:'ST',food:'F',washroom:'W',medical:'+',parking:'P',exit:'EX',stay:'H'}[k]||'•'}
-  function addRoute(map,e,destination,pts,mode){const d=resolvePoint(e,destination,pts),g=resolveGate(e,pts),start=mode==='attendee'?pts.parking.coord:[e.center[0]-.002,e.center[1]+.0018];const coords=[start,g.coord,[e.center[0]+.0004,e.center[1]-.0002],d.coord];try{map.addSource('ef-route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:coords}}});map.addLayer({id:'ef-route-glow',type:'line',source:'ef-route',paint:{'line-color':'#ffffff','line-width':10,'line-opacity':.72}});map.addLayer({id:'ef-route-main',type:'line',source:'ef-route',paint:{'line-color':'#735cff','line-width':5,'line-opacity':1,'line-dasharray':[1.2,1.25]}})}catch{}}
-  function resolveGate(e,p){return p[bestGate(e)]||p.east}function resolvePoint(e,id,p){return id==='gate'?resolveGate(e,p):(p[id]||p.seat||p.venue)}
-  function routeCenter(e,id,p){const a=resolveGate(e,p).coord,b=resolvePoint(e,id,p).coord;return[(a[0]+b[0])/2,(a[1]+b[1])/2]}
-  function poiLabel(e,id){return {seat:e.mainPlace,stage:e.mainPlace,food:'East Food Street',washroom:'Nearest Washroom',medical:'Medical Help',parking:'Parking P3 / Pickup',exit:'Suggested Exit',stay:e.hotels[0]?.[0]||'Nearby Stay',gate:cap(bestGate(e))+' Gate',north:'North Gate',east:'East Gate',south:'South Gate',west:'West Gate'}[id]||e.mainPlace}
-  function mapInstruction(e,id){const gate=cap(bestGate(e))+' Gate';if(id==='food')return `Use ${gate}, then follow the highlighted path to the lower-wait food area.`;if(id==='washroom')return 'Follow the highlighted path to the nearest open washroom.';if(id==='medical')return 'Medical help is open. Follow the highlighted path to the medical point.';if(id==='parking')return 'This shows parking, pickup and shuttle together.';if(id==='exit')return 'Use this exit for a smoother connection to pickup and transport.';if(id==='stay')return 'Follow the route to the event stay / hotel pickup point.';if(['north','east','south','west'].includes(id))return `${poiLabel(e,id)} live crowd is shown on the 3D map.`;return `Use ${gate}, then follow the highlighted path to ${poiLabel(e,id)}.`}
+  function loginDemo(role){
+    const u=read(STORE.users,[]).find(x=>x.role===role); session={name:u.name,email:u.email,role:u.role}; write(STORE.session,session); Object.assign(state,{screen:'app',role,authRole:role,name:u.name,tab:'events'}); render();
+  }
+  function authSubmit(ev){
+    ev.preventDefault(); const fd=new FormData(ev.currentTarget); const email=(fd.get('email')||'').toString().trim().toLowerCase(); const password=(fd.get('password')||'').toString(); let users=read(STORE.users,[]);
+    if(state.authMode==='signup'){
+      if(users.some(u=>u.email===email)){ toast('Account already exists','Use sign in instead.'); return; }
+      const u={name:(fd.get('name')||'Guest').toString().trim()||'Guest',email,password,role:state.authRole}; users.push(u); write(STORE.users,users); session={name:u.name,email:u.email,role:u.role};
+    } else {
+      const u=users.find(x=>x.email===email&&x.password===password&&x.role===state.authRole); if(!u){ toast('Could not sign in','Check role, email and password. Demo password is event123.'); return; } session={name:u.name,email:u.email,role:u.role};
+    }
+    write(STORE.session,session); Object.assign(state,{screen:'app',role:session.role,name:session.name,tab:'events'}); render();
+  }
+  function ticketSubmit(ev){ ev.preventDefault(); const fd=new FormData(ev.currentTarget); const t=(fd.get('ticket')||'').toString().trim(); if(!t){ toast('Enter ticket number'); return; } state.ticket=t; write(STORE.ticket,t); toast('Pass ready','Your live event guide is now open.'); render(); }
+  function updateTask(id,status){ const tasks=read(STORE.tasks,TASKS).map(t=>t.id===id?{...t,status}:t); write(STORE.tasks,tasks); toast(`Task ${status.toLowerCase()}`,`Status updated for ${id}.`); render(); }
 
-  seed();
+  setInterval(()=>{ const clock=document.getElementById('clock'); if(clock) clock.textContent=new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit',second:'2-digit'}).format(N()); },1000);
   render();
 })();
