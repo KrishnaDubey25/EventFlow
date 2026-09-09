@@ -2,408 +2,153 @@
   'use strict';
   const app = document.getElementById('app');
   const toastHost = document.getElementById('toast');
-  const STORE = {
-    users:'eventflow_true_users_v1',
-    session:'eventflow_true_session_v1',
-    tasks:'eventflow_true_tasks_v1',
-    ticket:'eventflow_true_ticket_v1'
-  };
-  const N = () => new Date();
-  const plusMin = (d,m) => new Date(d.getTime()+m*60000);
-  const seed = N();
-  const iso = d => d.toISOString();
-  const fmtTime = v => new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(v));
-  const fmtDate = v => new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(v));
-  const fmtDateShort = v => new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short'}).format(new Date(v));
-  const read = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-  const write = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+  const bc = 'BroadcastChannel' in window ? new BroadcastChannel('eventflow-liveops-v1') : null;
+  const K = {users:'ef_liveops_users',session:'ef_liveops_session',ops:'ef_liveops_ops',ticket:'ef_liveops_ticket'};
+  const now = () => new Date();
+  const plus = (m) => new Date(Date.now()+m*60000).toISOString();
+  const fmtT = v => new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(v));
+  const fmtD = v => new Intl.DateTimeFormat('en-IN',{day:'2-digit',month:'short'}).format(new Date(v));
+  const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+  const write=(k,v)=>{localStorage.setItem(k,JSON.stringify(v));bc?.postMessage({k,v,ts:Date.now()})};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  let map=null, userMarker=null, routeAbort=null, mapTimers=[];
 
-  function schedule(base, rows){
-    return rows.map(r=>({title:r[0],place:r[1],detail:r[2],start:iso(plusMin(base,r[3])),end:iso(plusMin(base,r[4]))}));
-  }
-
-  const EVENTS = [
-    {
-      id:'indpak', eventId:'EF-MUM-CR-091', category:'Cricket',
-      name:'India vs Pakistan — Championship Night', venue:'Harbour Arena', city:'Mumbai',
-      start:iso(plusMin(seed,-85)), end:iso(plusMin(seed,210)),
-      expected:58420, inside:43180, capacity:60000, health:88,
-      entry:'East Gate', exit:'South Gate', place:'Block C12 · Row J · Seat 18',
-      stayNeeded:false,
-      gates:{North:93,East:46,South:62,West:71},
-      parking:[
-        {name:'P1 North',total:1200,used:1175,walk:'15 min',road:'North Service Road',note:'Almost full'},
-        {name:'P2 West',total:1600,used:1280,walk:'11 min',road:'West Link Road',note:'Medium traffic'},
-        {name:'P3 East',total:2200,used:1430,walk:'8 min',road:'East Access Road',note:'Best option'},
-        {name:'P4 Overflow',total:1800,used:610,walk:'17 min',road:'Third Road',note:'No roadside parking'}
-      ],
-      food:[
-        {name:'North Food Court',crowd:91,wait:'20 min',status:'Very busy'},
-        {name:'East Food Street',crowd:43,wait:'6 min',status:'Best now'},
-        {name:'South Snacks',crowd:66,wait:'11 min',status:'Medium'},
-        {name:'Fan Store',crowd:31,wait:'3 min',status:'Easy'}
-      ],
-      hotels:[
-        {name:'Harbour Stay',distance:'1.3 km',rooms:42,price:'₹3,800',travel:'Shuttle 20 min'},
-        {name:'City Grand',distance:'2.1 km',rooms:18,price:'₹4,600',travel:'Shuttle 30 min'},
-        {name:'Metro Rooms',distance:'2.7 km',rooms:64,price:'₹2,900',travel:'Metro + walk'}
-      ],
-      transport:[
-        {name:'Metro East',load:58,next:'Next in 7 min',detail:'Last metro 12:35 AM'},
-        {name:'Shuttle S3',load:47,next:'Next in 4 min',detail:'Every 8 min'},
-        {name:'Taxi East',load:72,next:'9 min pickup',detail:'Busy'},
-        {name:'North Road',load:94,next:'+14 min',detail:'Avoid now'}
-      ],
-      schedule:schedule(seed,[
-        ['Gates open','All gates','Ticket checks and entry lines are active.',-85,-60],
-        ['Opening ceremony','Main stadium','Teams enter and crowd settles inside.',-60,-35],
-        ['First innings','Main stadium','Match is live. Food demand is medium.',-35,55],
-        ['Innings break','Food + washrooms','Highest food and washroom demand.',55,75],
-        ['Second innings','Main stadium','Match continues. Exit planning starts.',75,165],
-        ['Final overs','Main stadium','Final phase. Exit routes are prepared.',165,210],
-        ['Managed exit','Exits + transport','Guests split across metro, parking and pickups.',210,260]
-      ])
+  const DEMO_EVENTS=[
+    {id:'match',eventId:'EF-MUM-091',name:'India vs Pakistan — Championship Night',type:'Cricket',venue:'Wankhede Stadium · Demo',city:'Mumbai',start:plus(-72),end:plus(210),expected:58420,inside:43180,center:[72.8258,18.9389],entry:'East Gate',exit:'South Gate',seat:'Block C12 · Row J · Seat 18',stay:false,
+      program:[['Gates open',-72,-52,'All ticket lines open'],['Opening show',-52,-32,'Teams enter the stadium'],['First innings',-32,54,'Match live'],['Break',54,74,'Food and washroom rush'],['Second innings',74,166,'Match continues'],['Final overs',166,210,'Exit plan starts'],['Managed exit',210,255,'Metro, parking and pickup split']],
+      points:{
+        gates:[{id:'north',name:'North Gate',coord:[72.8257,18.9400],crowd:92,open:true,wait:18},{id:'east',name:'East Gate',coord:[72.8270,18.9388],crowd:41,open:true,wait:5},{id:'south',name:'South Gate',coord:[72.8258,18.9376],crowd:61,open:true,wait:10},{id:'west',name:'West Gate',coord:[72.8246,18.9388],crowd:73,open:true,wait:13}],
+        parking:[{id:'p1',name:'Parking P1',coord:[72.8245,18.9410],used:1180,total:1200,status:'Almost full',road:'Marine Lines side'},{id:'p3',name:'Parking P3',coord:[72.8284,18.9398],used:1160,total:2200,status:'Best option',road:'Churchgate side'},{id:'p4',name:'Parking P4',coord:[72.8288,18.9376],used:480,total:1700,status:'Free spaces',road:'South approach'}],
+        food:[{id:'foodN',name:'North Food Court',coord:[72.8255,18.9396],wait:21,status:'Very busy',open:true},{id:'foodE',name:'East Food Street',coord:[72.8266,18.9387],wait:4,status:'Free now',open:true},{id:'store',name:'Fan Store',coord:[72.8260,18.9381],wait:2,status:'Easy',open:true}],
+        medical:[{id:'med1',name:'Medical Point A',coord:[72.8250,18.9382],status:'Open'}],
+        metro:[{id:'metro',name:'Churchgate Metro/Rail',coord:[72.8279,18.9353],status:'Normal',next:'Next service in 6 min'}],
+        hotels:[{id:'hotel',name:'Event Stay Partner',coord:[72.8301,18.9410],status:'42 rooms left',price:'₹3,800'}]
+      }
     },
-    {
-      id:'pulse', eventId:'EF-MUM-MU-146', category:'Concert',
-      name:'Pulse Arena Live', venue:'Central Grounds', city:'Mumbai',
-      start:iso(plusMin(seed,-20)), end:iso(plusMin(seed,250)), expected:36000, inside:28150, capacity:40000, health:84,
-      entry:'West Gate',exit:'East Gate',place:'Stage A · Zone B',stayNeeded:false,
-      gates:{North:59,East:45,South:88,West:52},
-      parking:[{name:'P1 North',total:900,used:650,walk:'13 min',road:'North Road',note:'Good'}, {name:'P2 South',total:1300,used:1190,walk:'7 min',road:'South Road',note:'Very busy'}, {name:'P3 East',total:1800,used:810,walk:'9 min',road:'East Link',note:'Best option'}],
-      food:[{name:'Stage A Food',crowd:82,wait:'16 min',status:'Busy'},{name:'East Eats',crowd:39,wait:'5 min',status:'Best now'},{name:'Merch Store',crowd:35,wait:'4 min',status:'Easy'}],
-      hotels:[{name:'Central Inn',distance:'0.9 km',rooms:25,price:'₹3,200',travel:'20 min loop'},{name:'Metro Suites',distance:'1.8 km',rooms:49,price:'₹4,200',travel:'Metro link'}],
-      transport:[{name:'Metro Central',load:64,next:'Next in 5 min',detail:'Last metro 12:20 AM'},{name:'Shuttle C2',load:53,next:'Next in 6 min',detail:'Every 10 min'},{name:'South Road',load:92,next:'+16 min',detail:'Avoid now'}],
-      schedule:schedule(seed,[['Main gates open','East, West, North','General and premium lines are open.',-20,5],['Opening act','Stage B','Opening performance is live.',5,55],['Headline show','Stage A','Main performance is live.',55,175],['Acoustic set','Stage B','Crowd moves toward Stage B.',175,205],['Final set','Stage A','Final performance and exit messaging.',205,250],['Exit & pickup','East pickup + Metro','Guests move to pickup and metro.',250,300]])
-    },
-    {
-      id:'expo', eventId:'EF-MUM-EX-228', category:'Expo',
-      name:'Future Tech Expo 2026', venue:'Innovation Hall', city:'Mumbai',
-      start:iso(plusMin(seed,80)), end:iso(plusMin(seed,530)), expected:26000, inside:0, capacity:32000, health:95,
-      entry:'North Gate',exit:'West Gate',place:'Hall 2 · Robotics',stayNeeded:true,
-      gates:{North:32,East:44,South:39,West:28},
-      parking:[{name:'P1 Hall',total:900,used:280,walk:'5 min',road:'Innovation Road',note:'Good'},{name:'P2 Metro',total:800,used:320,walk:'9 min',road:'Metro Link',note:'Good'},{name:'P3 East',total:1400,used:400,walk:'8 min',road:'East Road',note:'Best for Hall 2'}],
-      food:[{name:'Hall 1 Cafe',crowd:34,wait:'4 min',status:'Easy'},{name:'Hall 2 Cafe',crowd:51,wait:'7 min',status:'Medium'},{name:'Partner Store',crowd:22,wait:'2 min',status:'Easy'}],
-      hotels:[{name:'Tech Residency',distance:'0.7 km',rooms:84,price:'₹3,100',travel:'Walkable'},{name:'Innovation Suites',distance:'1.4 km',rooms:57,price:'₹4,300',travel:'Shuttle 20 min'},{name:'Metro Stay',distance:'2.0 km',rooms:112,price:'₹2,800',travel:'Metro link'}],
-      transport:[{name:'Metro Tech Park',load:40,next:'Next in 8 min',detail:'Last metro 11:55 PM'},{name:'Shuttle E1',load:31,next:'Next in 7 min',detail:'Every 12 min'},{name:'East Road',load:36,next:'Normal',detail:'Good'}],
-      schedule:schedule(seed,[['Entry opens','Registration','Badge scans and registration.',80,110],['Expo opens','All halls','All exhibit halls are active.',110,230],['Demo sessions','Hall 1 + Hall 2','Startup and robotics demos.',230,360],['AI showcase','Main Theatre','Main showcase session.',360,450],['Networking','Partner lounge','Meet companies and speakers.',450,510],['Closing','All halls','Final sessions and guest exit.',510,530]])
-    },
-    {
-      id:'food', eventId:'EF-MUM-FF-044', category:'Festival',
-      name:'City Food Festival', venue:'Riverside Park', city:'Mumbai',
-      start:iso(plusMin(seed,-420)), end:iso(plusMin(seed,-120)), expected:18000, inside:0, capacity:24000, health:91,
-      entry:'East Gate',exit:'East Gate',place:'Central Food Lawn',stayNeeded:false,
-      gates:{North:35,East:42,South:49,West:37},
-      parking:[{name:'P1 Riverside',total:900,used:0,walk:'6 min',road:'River Road',note:'Closed after event'}],
-      food:[{name:'Street Food',crowd:0,wait:'0 min',status:'Closed'},{name:'Dessert Lane',crowd:0,wait:'0 min',status:'Closed'}],
-      hotels:[{name:'River Inn',distance:'1.2 km',rooms:36,price:'₹2,600',travel:'Taxi'}],
-      transport:[{name:'Metro Riverside',load:0,next:'—',detail:'Event ended'}],
-      schedule:schedule(seed,[['Entry','East Gate','Festival entry.',-420,-390],['Lunch rush','Main lawn','Peak lunch crowd.',-390,-300],['Chef stage','Stage 1','Live cooking.',-300,-210],['Final tasting','Main lawn','Last tasting session.',-210,-140],['Exit','East Gate','Managed guest exit.',-140,-120]])
-    }
+    {id:'concert',eventId:'EF-MUM-146',name:'Pulse Arena Live',type:'Concert',venue:'Central Grounds',city:'Mumbai',start:plus(-18),end:plus(255),expected:36000,inside:28150,center:[72.8352,18.9850],entry:'West Gate',exit:'East Gate',seat:'Zone B · Standing',stay:false,program:[['Entry open',-18,8,'Entry and wristband check'],['Opening act',8,58,'Stage B live'],['Headline show',58,178,'Stage A live'],['Final set',178,255,'Main performance'],['Exit & pickup',255,300,'Split exits']],points:null},
+    {id:'expo',eventId:'EF-MUM-228',name:'Future Tech Expo 2026',type:'Expo',venue:'Innovation Hall',city:'Mumbai',start:plus(95),end:plus(520),expected:26000,inside:0,center:[72.8691,19.0670],entry:'North Gate',exit:'West Gate',seat:'Hall 2 · Robotics',stay:true,program:[['Entry opens',95,125,'Badge checks'],['Expo opens',125,260,'All halls live'],['Demos',260,390,'Robotics and startup demos'],['Networking',390,490,'Partner lounge'],['Closing',490,520,'Guest exit']],points:null},
+    {id:'foodfest',eventId:'EF-MUM-044',name:'City Food Festival',type:'Festival',venue:'Riverside Park',city:'Mumbai',start:plus(-430),end:plus(-120),expected:18000,inside:0,center:[72.821,19.032],entry:'East Gate',exit:'East Gate',seat:'Central Lawn',stay:false,program:[['Entry',-430,-390,'Festival opens'],['Lunch rush',-390,-300,'Peak food demand'],['Chef stage',-300,-220,'Live cooking'],['Final tasting',-220,-140,'Last session'],['Exit',-140,-120,'Event closed']],points:null}
   ];
 
-  const TASKS = [
-    {id:'T-21',event:'indpak',priority:'High',title:'Open one more East Gate line',where:'East Gate',why:'North Gate is 93% busy',by:'10 min',need:'6 staff + 2 scanners',route:'Service Zone → East Gate',status:'New',steps:['Move six staff to East Gate.','Open one extra ticket scan lane.','Place the “Use East Gate” board.','Report queue level after 8 minutes.']},
-    {id:'T-22',event:'indpak',priority:'Medium',title:'Move food demand to East Food Street',where:'North Food Court',why:'Current wait is 20 min',by:'Now',need:'2 guides + digital sign',route:'North Concourse → East Food Street',status:'New',steps:['Place two guides near North Food Court.','Show East Food Street wait time on sign.','Keep medical path clear.']},
-    {id:'T-23',event:'indpak',priority:'High',title:'Prepare P4 overflow parking',where:'Parking P4',why:'P1 is almost full',by:'15 min',need:'4 marshals + cones',route:'Third Road → P4',status:'Working',steps:['Open overflow gate.','Place cones before Third Road junction.','Send new cars to P4.']},
-    {id:'T-31',event:'pulse',priority:'High',title:'Redirect South Road arrivals',where:'South Road',why:'Road load is 92%',by:'12 min',need:'4 marshals',route:'South Road → East Link',status:'New',steps:['Reduce South entry flow.','Send vehicles to East Link.','Update P3 parking board.']}
-  ];
-
-  if(!localStorage.getItem(STORE.users)) write(STORE.users,[
-    {name:'Demo Guest',email:'attendee@eventflow.demo',password:'event123',role:'attendee'},
-    {name:'Demo Operator',email:'operator@eventflow.demo',password:'event123',role:'operator'},
-    {name:'Demo Manager',email:'manager@eventflow.demo',password:'event123',role:'management'}
-  ]);
-  if(!localStorage.getItem(STORE.tasks)) write(STORE.tasks,TASKS);
-
-  let session = read(STORE.session,null);
-  let state = {
-    screen: session ? 'app' : 'landing',
-    authMode:'signin', authRole:'attendee',
-    role: session?.role || 'attendee',
-    name: session?.name || '',
-    tab:'events', filter:'all', eventId:'indpak', ticket:read(STORE.ticket,null),
-    destination:'seat', route:'safe', selectedTask:'T-21'
+  const defaultOps={
+    gates:{north:{crowd:92,open:true,wait:18,operator:'Rohit · Entry Team'},east:{crowd:41,open:true,wait:5,operator:'Aisha · Entry Team'},south:{crowd:61,open:true,wait:10,operator:'Neel · Security'},west:{crowd:73,open:true,wait:13,operator:'Meera · Access'}},
+    parking:{p1:{used:1180,total:1200,operator:'Parking Team A'},p3:{used:1160,total:2200,operator:'Parking Team C'},p4:{used:480,total:1700,operator:'Overflow Team'}},
+    food:{foodN:{wait:21,open:true,free:false,operator:'Vendor North'},foodE:{wait:4,open:true,free:true,operator:'Vendor East'},store:{wait:2,open:true,free:true,operator:'Merch Team'}},
+    transport:{metro:{load:58,next:'Next service in 6 min'},shuttle:{load:42,next:'Shuttle S3 in 4 min',active:true}},
+    logs:[
+      {ts:Date.now()-110000,type:'gate',title:'East Gate extra line opened',detail:'Aisha opened one more ticket scan line.'},
+      {ts:Date.now()-210000,type:'food',title:'East Food Street marked free',detail:'Vendor reported 4 min wait and free tables.'},
+      {ts:Date.now()-330000,type:'parking',title:'P3 parking promoted',detail:'Parking team confirmed 1,040 free spaces.'},
+      {ts:Date.now()-480000,type:'transport',title:'Shuttle S3 deployed',detail:'Extra shuttle moved to East pickup.'}
+    ]
   };
 
-  function statusOf(e){ const t=N(); if(t < new Date(e.start)) return 'upcoming'; if(t > new Date(e.end)) return 'done'; return 'live'; }
-  function statusText(s){ return s==='done'?'Completed':s[0].toUpperCase()+s.slice(1); }
-  function activeSlot(e){ const t=N(); return e.schedule.find(s=>t>=new Date(s.start)&&t<new Date(s.end)); }
-  function nextSlot(e){ const t=N(); return e.schedule.find(s=>new Date(s.start)>t); }
-  function countdown(v){ const m=Math.max(0,Math.round((new Date(v)-N())/60000)); if(m<60) return `${m} min`; return `${Math.floor(m/60)}h ${m%60}m`; }
-  function bestGate(e){ return Object.entries(e.gates).sort((a,b)=>a[1]-b[1])[0][0]; }
-  function worstGate(e){ return Object.entries(e.gates).sort((a,b)=>b[1]-a[1])[0][0]; }
-  function crowdWord(v){ return v>=85?'Very busy':v>=70?'Busy':v>=50?'Medium':'Easy'; }
-  function crowdColor(v){ return v>=85?'#ff6577':v>=70?'#ff9a62':v>=50?'#ffc66b':'#62d6a7'; }
-  function e(){ return EVENTS.find(x=>x.id===state.eventId) || EVENTS[0]; }
-  function roleLabel(r){ return r==='management'?'Event Management':r[0].toUpperCase()+r.slice(1); }
-  function icon(ch){ return `<span class="nav-icon">${ch}</span>`; }
-  function toast(title,text=''){ const d=document.createElement('div'); d.className='toast'; d.innerHTML=`<b>${title}</b><span>${text}</span>`; toastHost.appendChild(d); setTimeout(()=>d.remove(),3200); }
-  function setState(p){ Object.assign(state,p); render(); }
-
-  function landing(){
-    return `<div class="shell">
-      <header class="topnav">
-        <div class="brand"><span class="brand-mark"></span>EventFlow</div>
-        <div class="nav-actions"><button class="btn btn-soft" data-action="open-live">Live events</button><button class="btn btn-primary" data-action="auth">Sign in</button></div>
-      </header>
-      <section class="hero">
-        <div>
-          <span class="eyebrow"><span class="live-dot"></span>Live event operating system</span>
-          <h1>Make every event <span>easy to enter, enjoy and manage.</span></h1>
-          <p>EventFlow connects guests, event teams, travel, food, stays, entry gates and live crowd movement in one simple flow. Guests always know what is happening now and where to go next. Teams always know what needs attention.</p>
-          <div class="hero-actions"><button class="btn btn-primary" data-action="auth">Open EventFlow</button><button class="btn btn-dark" data-action="demo-attendee">Try guest demo</button></div>
-          <div class="hero-points">
-            <div class="hero-point"><b>Know what is live</b><span>See the event program, live now, next and later.</span></div>
-            <div class="hero-point"><b>Guide every guest</b><span>Seat, food, washroom, medical, parking, stay and exit.</span></div>
-            <div class="hero-point"><b>Run the whole event</b><span>Management and operators share the same live picture.</span></div>
-          </div>
-        </div>
-        <div class="hero-visual">
-          <div class="event-orbit">
-            <div class="orbit-ring ring1"></div><div class="orbit-ring ring2"></div>
-            <div class="orbit-line ol1"></div><div class="orbit-line ol2"></div><div class="orbit-line ol3"></div><div class="orbit-line ol4"></div>
-            <div class="orbit-core"><div><b>EVENTFLOW</b><span>One event. One clear flow.</span></div></div>
-            <div class="orbit-node n1"><b>Guests</b><span>Pass · route · help</span></div>
-            <div class="orbit-node n2"><b>Event team</b><span>Tasks · crowd · alerts</span></div>
-            <div class="orbit-node n3"><b>Travel</b><span>Metro · shuttle · parking</span></div>
-            <div class="orbit-node n4"><b>Services</b><span>Food · store · medical</span></div>
-            <div class="orbit-node n5"><b>Stay</b><span>Rooms · pickup · check-in</span></div>
-          </div>
-        </div>
-      </section>
-      <section class="section soft" id="live-events">
-        <div class="section-head"><small>What EventFlow manages</small><h2>More than crowd control.</h2><p>Traffic and crowded gates are only one part. EventFlow follows the full guest journey from arrival to exit while giving the event team a live operating view.</p></div>
-        <div class="feature-grid">
-          ${feature('01','Live program','Guests see what is happening now, what starts next and where it happens.')}
-          ${feature('02','Smart event guide','Seat, stage, food, store, washroom, help, parking, stay and exit from one screen.')}
-          ${feature('03','Safer navigation','Busy roads and gates are avoided when a faster or less crowded route is available.')}
-          ${feature('04','Food & service flow','Teams can see which stalls are overloaded and which areas have free capacity.')}
-          ${feature('05','Travel & parking','Parking spaces, road pressure, metro, shuttle and pickup options are managed together.')}
-          ${feature('06','Team operations','Operators receive clear jobs with place, reason, deadline, route and required resources.')}
-        </div>
-      </section>
-      <section class="section">
-        <div class="section-head"><small>Live demo events</small><h2>See the event first. Then choose your role.</h2><p>EventFlow can run many events at the same time. Select any live or upcoming event after sign in.</p></div>
-        <div class="live-showcase">
-          <div class="showcase-main"><span class="eyebrow"><span class="live-dot"></span>Current operating picture</span><div class="showcase-kpis">
-            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='live').length}</b><span>Live now</span></div>
-            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='upcoming').length}</b><span>Upcoming</span></div>
-            <div class="mini-kpi"><b>${EVENTS.filter(x=>statusOf(x)==='done').length}</b><span>Completed</span></div>
-            <div class="mini-kpi"><b>3</b><span>User roles</span></div>
-          </div></div>
-          <div class="showcase-side">${EVENTS.map(x=>`<div class="event-chip"><div><strong>${x.name}</strong><small>${x.venue} · ${fmtTime(x.start)} – ${fmtTime(x.end)}</small></div><span class="status-pill status-${statusOf(x)}">${statusText(statusOf(x))}</span></div>`).join('')}</div>
-        </div>
-      </section>
-    </div>`;
+  function seed(){
+    if(!localStorage.getItem(K.users)) write(K.users,[
+      {name:'Demo Attendee',email:'attendee@eventflow.demo',password:'event123',role:'attendee'},
+      {name:'Demo Operator',email:'operator@eventflow.demo',password:'event123',role:'operator'},
+      {name:'Demo Manager',email:'manager@eventflow.demo',password:'event123',role:'management'}
+    ]);
+    if(!localStorage.getItem(K.ops)) write(K.ops,defaultOps);
   }
-  function feature(n,t,p){ return `<article class="feature-card"><div class="feature-icon">${n}</div><h3>${t}</h3><p>${p}</p></article>`; }
+  seed();
 
-  function auth(){
-    return `<div class="auth-wrap">
-      <section class="auth-art"><div><div class="brand"><span class="brand-mark"></span>EventFlow</div><h1>Choose your role. See only what you need.</h1><p>Guests get a simple event guide. Operators get jobs and live work areas. Event managers get the full event control view.</p></div>
-      <div class="auth-list"><div><b>Attendee</b><span>Ticket, live program, route and services.</span></div><div><b>Operator</b><span>Event jobs, crowd points and service loads.</span></div><div><b>Management</b><span>All events, teams, guests and operations.</span></div></div></section>
-      <section class="auth-panel"><div class="auth-card"><h2>${state.authMode==='signup'?'Create account':'Welcome back'}</h2><p>${state.authMode==='signup'?'Create a local browser account for this demo.':'Sign in to open your EventFlow workspace.'}</p>
-      <div class="role-tabs">${['attendee','operator','management'].map(r=>`<button class="${state.authRole===r?'active':''}" data-action="auth-role" data-role="${r}">${roleLabel(r)}</button>`).join('')}</div>
-      <form id="auth-form">
-      ${state.authMode==='signup'?`<div class="form-field"><label>Name</label><input name="name" placeholder="Your name" required /></div>`:''}
-      <div class="form-field"><label>Email</label><input name="email" type="email" value="${state.authRole==='attendee'?'attendee@eventflow.demo':state.authRole==='operator'?'operator@eventflow.demo':'manager@eventflow.demo'}" required /></div>
-      <div class="form-field"><label>Password</label><input name="password" type="password" value="event123" required /></div>
-      <button class="btn btn-primary" style="width:100%;margin-top:6px" type="submit">${state.authMode==='signup'?'Create account':'Sign in'}</button>
-      </form>
-      <div class="auth-note">Demo password: <b>event123</b>. Accounts are stored only in this browser. No database is used in this version.</div>
-      <button class="btn btn-soft" style="width:100%;margin-top:10px;color:#24364a;border-color:#dce3eb" data-action="toggle-auth">${state.authMode==='signup'?'Already have an account? Sign in':'New here? Create account'}</button>
-      <button class="btn" style="width:100%;margin-top:8px;background:transparent;color:#5d7084" data-action="back-home">Back to home</button>
+  const statusOf=e=>{const n=Date.now(),s=new Date(e.start).getTime(),en=new Date(e.end).getTime();return n<s?'upcoming':n>en?'done':'live'};
+  const currentProgram=e=>e.program.map(x=>({name:x[0],start:new Date(Date.now()+x[1]*60000),end:new Date(Date.now()+x[2]*60000),detail:x[3]}));
+  // Persist program base for stable browser session
+  const SESSION_BASE=read('ef_liveops_base',null)||Date.now(); if(!localStorage.getItem('ef_liveops_base')) localStorage.setItem('ef_liveops_base',String(SESSION_BASE));
+  DEMO_EVENTS.forEach((e,idx)=>{if(!e._fixed){const starts=[-72,-18,95,-430][idx],ends=[210,255,520,-120][idx];e.start=new Date(SESSION_BASE+starts*60000).toISOString();e.end=new Date(SESSION_BASE+ends*60000).toISOString();e.program=e.program.map(x=>({name:x[0],start:new Date(SESSION_BASE+x[1]*60000).toISOString(),end:new Date(SESSION_BASE+x[2]*60000).toISOString(),detail:x[3]}));e._fixed=true;}});
+  const programState=p=>Date.now()<new Date(p.start)?'upcoming':Date.now()>new Date(p.end)?'done':'live';
+  const eventBy=id=>DEMO_EVENTS.find(e=>e.id===id)||DEMO_EVENTS[0];
+  const ops=()=>read(K.ops,defaultOps);
+  const session=()=>read(K.session,null);
+  function toast(title,detail=''){const d=document.createElement('div');d.className='toast';d.innerHTML=`<b>${esc(title)}</b><span>${esc(detail)}</span>`;toastHost.appendChild(d);setTimeout(()=>d.remove(),3800)}
+  function addLog(type,title,detail){const o=ops();o.logs.unshift({ts:Date.now(),type,title,detail});o.logs=o.logs.slice(0,18);write(K.ops,o)}
+  function destroyMap(){mapTimers.forEach(clearInterval);mapTimers=[];if(map){try{map.remove()}catch{}map=null}userMarker=null;if(routeAbort){routeAbort.abort();routeAbort=null}}
+
+  function landing(){destroyMap();app.innerHTML=`<div class="shell">
+    <header class="topbar"><div class="brand"><div class="brand-mark">E</div><span>EventFlow</span></div><div class="top-actions"><button class="btn ghost" data-go="features">How it works</button><button class="btn primary" data-auth="attendee">Open EventFlow</button></div></header>
+    <main>
+      <section class="hero"><div><div class="eyebrow"><i class="live-dot"></i> Live event operating system</div><h1>Run the whole event as <em>one connected experience.</em></h1><p>EventFlow keeps guests, gates, food, parking, transport, hotels and event teams in sync — from arrival to the final exit.</p><div class="hero-actions"><button class="btn primary" data-auth="attendee">Explore live demo</button><button class="btn" data-auth="management">Management demo</button></div><div class="hero-proof"><div class="proof"><b>4</b><span>live / upcoming demo events</span></div><div class="proof"><b>1 view</b><span>for every event service</span></div><div class="proof"><b>Live</b><span>operator updates across roles</span></div></div></div>
+      <div class="hero-visual" aria-label="EventFlow connected event services illustration"><div class="orbit"></div><div class="orbit o2"></div><div class="flowline fl1"></div><div class="flowline fl2"></div><div class="flowline fl3"></div><div class="flowline fl4"></div><div class="core"><div><b>EventFlow</b><small>Live event core</small></div></div><div class="orb a">Guests<small>journeys & help</small></div><div class="orb b">Event teams<small>tasks & live actions</small></div><div class="orb c">Food · Stay · Travel<small>services in one place</small></div><div class="orb d">Crowd · Gates<small>safe movement</small></div></div></section>
+      <section class="section" id="features"><div class="section-head"><div><div class="eyebrow">More than a map</div><h2>Everything a guest needs. Everything a team needs.</h2></div><p>Navigation is one feature. EventFlow also shows what is live now, which services are free, where teams are working and what changes next.</p></div><div class="feature-grid">
+        ${[['◉','Live event guide','See what is happening now, what starts next and where to go.'],['↗','Crowd-aware navigation','Get a real road route and avoid the busiest gate when a safer route is available.'],['P','Parking & arrival','See free spaces, best parking, road pressure and walking time.'],['🍴','Food & services','See which food area is free, current wait time, stores, washrooms and medical help.'],['⌂','Stay & transport','For long events, see rooms, hotel shuttle, metro timing and last-mile options.'],['✓','Live team actions','When an operator opens a gate or adds a shuttle, the change appears for guests and management.']].map(x=>`<article class="feature"><div class="ico">${x[0]}</div><h3>${x[1]}</h3><p>${x[2]}</p></article>`).join('')}
       </div></section>
-    </div>`;
+    </main></div>`;
+    app.querySelectorAll('[data-auth]').forEach(b=>b.onclick=()=>auth(b.dataset.auth));app.querySelector('[data-go="features"]')?.addEventListener('click',()=>document.getElementById('features')?.scrollIntoView());
   }
 
-  const NAV = {
-    attendee:[['events','Events','E'],['journey','My Journey','J'],['navigate','Navigate','N'],['services','Food, Stay & Travel','S']],
-    operator:[['events','Events','E'],['overview','Live Work','L'],['map','Movement','M'],['tasks','Tasks','T'],['services','Services','S']],
-    management:[['events','All Events','E'],['overview','Control Room','C'],['journey','Guest Journey','J'],['map','Live Movement','M'],['services','Food, Stay & Travel','S'],['tasks','Teams & Jobs','T'],['reports','Reports','R']]
-  };
-
-  function appShell(content){
-    const ev=e();
-    return `<div class="app-layout">
-      <aside class="sidebar"><div class="brand"><span class="brand-mark"></span>EventFlow</div>
-        <div class="side-event"><small>Selected event</small><b>${ev.name}</b><span>${ev.eventId} · ${statusText(statusOf(ev))}</span></div>
-        <nav class="side-nav">${NAV[state.role].map(([id,label,ic])=>`<button data-action="tab" data-tab="${id}" class="${state.tab===id?'active':''}">${icon(ic)}${label}</button>`).join('')}</nav>
-        <div class="sidebar-bottom"><div class="user-mini"><b>${state.name||'Demo user'}</b><span>${roleLabel(state.role)}</span></div><button class="btn btn-soft" style="width:100%;margin-top:8px" data-action="logout">Sign out</button></div>
-      </aside>
-      <main class="main"><header class="app-topbar"><div class="app-title"><small>${roleLabel(state.role)}</small><h1>${tabTitle()}</h1></div><div class="top-tools"><div class="clock-chip" id="clock">${new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit',second:'2-digit'}).format(N())}</div><button class="btn btn-dark" data-action="events">Change event</button></div></header>${content}</main>
-    </div>`;
-  }
-  function tabTitle(){ const item=NAV[state.role].find(x=>x[0]===state.tab); return item?item[1]:'EventFlow'; }
-
-  function eventsPage(){
-    const counts={all:EVENTS.length,live:EVENTS.filter(x=>statusOf(x)==='live').length,upcoming:EVENTS.filter(x=>statusOf(x)==='upcoming').length,done:EVENTS.filter(x=>statusOf(x)==='done').length};
-    const list=EVENTS.filter(x=>state.filter==='all'||statusOf(x)===state.filter);
-    return `<section class="page"><div class="page-head"><div><h2>${state.role==='attendee'?'Your event hub':'Event control hub'}</h2><p>${state.role==='attendee'?'First choose the event you are attending. You will then see what is live, where to go and what you need next.':'See every event by real time state. Open one event to manage its guests, teams, travel, food, stay and live operations.'}</p></div></div>
-      <div class="stats"><div class="stat"><small>All events</small><b>${counts.all}</b><span>Available in EventFlow</span></div><div class="stat"><small>Live now</small><b>${counts.live}</b><span>Running at this moment</span></div><div class="stat"><small>Upcoming</small><b>${counts.upcoming}</b><span>Still left to start</span></div><div class="stat"><small>Completed</small><b>${counts.done}</b><span>Already finished</span></div></div>
-      <div class="filters">${[['all','All events'],['live','Live'],['upcoming','Upcoming'],['done','Completed']].map(x=>`<button class="filter ${state.filter===x[0]?'active':''}" data-action="filter" data-filter="${x[0]}">${x[1]}</button>`).join('')}</div>
-      <div class="event-list">${list.map(eventRow).join('')}</div>
-    </section>`;
-  }
-  function eventRow(x){
-    const s=statusOf(x); const active=activeSlot(x); const nxt=nextSlot(x);
-    return `<article class="event-row"><div class="event-name"><span class="tag ${s}">${statusText(s)}</span><b style="display:block;margin-top:8px">${x.name}</b><small>${x.category} · ${x.venue} · ${x.city}</small></div><div class="event-meta"><small>Event ID</small><b>${x.eventId}</b></div><div class="event-meta"><small>Time</small><b class="event-time">${fmtDateShort(x.start)} · ${fmtTime(x.start)} – ${fmtTime(x.end)}</b></div><div class="event-meta"><small>${s==='live'?'Live now':s==='upcoming'?'Starts in':'Status'}</small><b>${s==='live'?(active?.title||'Event live'):s==='upcoming'?countdown(x.start):'Completed'}</b></div><div class="event-actions"><button class="btn btn-dark" data-action="select-event" data-event="${x.id}">View event</button>${state.role==='attendee'&&s!=='done'?`<button class="btn btn-primary" data-action="go-event" data-event="${x.id}">Go to event</button>`:''}</div></article>`;
+  function auth(role='attendee'){destroyMap();let mode='signin',selected=role;const render=()=>{app.innerHTML=`<div class="auth-page"><section class="auth-art"><div><div class="brand"><div class="brand-mark">E</div><span>EventFlow</span></div><h1>One event.<br>Three clear views.</h1><p>Guests get simple guidance. Operators get exact work. Management sees the whole event in real time.</p></div><div class="auth-grid"><div class="auth-mini"><b>Guest</b><span>ticket, live guide, route, food, stay</span></div><div class="auth-mini"><b>Operator</b><span>tasks, zones, services, live actions</span></div><div class="auth-mini"><b>Management</b><span>all events, teams, crowd, services</span></div></div></section><section class="auth-panel"><button class="btn ghost sm" id="backHome">← Home</button><h2>${mode==='signin'?'Sign in':'Create account'}</h2><p>${mode==='signin'?'Choose your role and continue.':'Your account stays in this browser for this demo.'}</p><div class="role-tabs">${['attendee','operator','management'].map(r=>`<button class="role-tab ${selected===r?'active':''}" data-role="${r}">${r==='management'?'Event Management':r[0].toUpperCase()+r.slice(1)}</button>`).join('')}</div>${mode==='signup'?`<div class="field"><label>Your name</label><input id="name" placeholder="Your name"></div>`:''}<div class="field"><label>Email</label><input id="email" type="email" value="${selected}@eventflow.demo"></div><div class="field"><label>Password</label><input id="pass" type="password" value="event123"></div><button class="btn primary" id="submitAuth" style="margin-top:18px;width:100%">${mode==='signin'?'Sign in':'Create account'}</button><button class="btn ghost" id="toggleAuth" style="margin-top:8px;width:100%">${mode==='signin'?'Create a local account':'I already have an account'}</button><div class="auth-help">Demo password: <b>event123</b>. No database is used in this build.</div></section></div>`;
+      app.querySelector('#backHome').onclick=landing;app.querySelector('#toggleAuth').onclick=()=>{mode=mode==='signin'?'signup':'signin';render()};app.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{selected=b.dataset.role;render()});app.querySelector('#submitAuth').onclick=()=>{const email=app.querySelector('#email').value.trim().toLowerCase(),password=app.querySelector('#pass').value;let users=read(K.users,[]);if(mode==='signup'){const name=app.querySelector('#name').value.trim()||'EventFlow User';if(users.some(u=>u.email===email)){toast('Account already exists','Sign in instead.');return}users.push({name,email,password,role:selected});write(K.users,users)}const u=users.find(x=>x.email===email&&x.password===password&&x.role===selected);if(!u){toast('Could not sign in','Check the role, email and password.');return}write(K.session,u);eventHub()};
+    };render();
   }
 
-  function attendeeJourney(){
-    const ev=e(); const act=activeSlot(ev); const nxt=nextSlot(ev);
-    if(!state.ticket){
-      return `<section class="page"><div class="page-head"><div><h2>Open your event pass</h2><p>Enter the ticket number from your ticket. EventFlow will prepare the event guide for this event.</p></div></div><div class="grid2"><div class="panel"><div class="section-label">Ticket</div><h3>${ev.name}</h3><p>${ev.venue} · ${fmtTime(ev.start)} – ${fmtTime(ev.end)}</p><form id="ticket-form"><div class="form-field"><label>Ticket number</label><input name="ticket" placeholder="Example: INDPK-C12-018" required /></div><button class="btn btn-primary" type="submit">Open my pass</button></form></div><div class="panel"><div class="section-label">What you get</div><div class="activity-list">${activity('✓','Live program','Know what is happening now and next.',true)}${activity('→','Best way in','Get the easier gate and route.',false)}${activity('●','Everything inside','Seat, food, washroom, medical and exit.',false)}</div></div></div></section>`;
-    }
-    return `<section class="page"><div class="page-head"><div><h2>Your event, one clear journey</h2><p>Start from what is live now. Tap any place to open navigation.</p></div><button class="btn btn-dark" data-action="clear-ticket">Use another ticket</button></div>
-      <div class="ticket-card"><div class="ticket-pass"><div class="tagline">EventFlow smart pass</div><h3>${ev.name}</h3><p>${ev.venue} · ${fmtDate(ev.start)}</p><div class="ticket-data"><div><small>Ticket</small><b>${state.ticket}</b></div><div><small>Your place</small><b>${ev.place}</b></div><div><small>Best entry</small><b>${bestGate(ev)} Gate</b></div><div><small>Exit</small><b>${ev.exit}</b></div><div><small>Live now</small><b>${act?.title||statusText(statusOf(ev))}</b></div><div><small>Next</small><b>${nxt?.title||'Managed exit'}</b></div></div><div class="ticket-qr"></div></div>
-      <div class="panel"><div class="section-label">What is happening now?</div><h3>${act?.title||'Event not live right now'}</h3><p>${act?.detail|| (statusOf(ev)==='upcoming'?`Event starts in ${countdown(ev.start)}.`:'This event has finished.')}</p>${act?`<button class="btn btn-primary" data-action="dest" data-dest="seat">Go to ${act.place}</button>`:''}</div></div>
-      <div class="grid2" style="margin-top:14px"><div class="panel"><div class="section-label">Go anywhere</div><div class="activity-list">
-      ${activity('◆','My place',ev.place,false,'seat')}${activity('●','Food & drinks',bestFood(ev).name+' · '+bestFood(ev).wait,false,'food')}${activity('◇','Event store','Fan store / event merchandise',false,'store')}${activity('WC','Washroom','Nearest low-queue washroom',false,'washroom')}${activity('+','Medical help','First-aid and medical support',false,'medical')}${activity('P','Parking',bestParking(ev).name+' · '+bestParking(ev).walk,false,'parking')}${ev.stayNeeded?activity('H','Stay & hotel',bestHotel(ev).name+' · '+bestHotel(ev).rooms+' rooms left',false,'hotel'):''}${activity('M','Metro / shuttle',bestTransport(ev).name+' · '+bestTransport(ev).next,false,'metro')}${activity('↗','Exit',ev.exit+' · best after event',false,'exit')}
-      </div></div><div class="panel"><div class="section-label">Today at this event</div><div class="timeline">${timelineRows(ev)}</div></div></div>
-    </section>`;
-  }
-  function activity(ic,title,sub,nowFlag,dest){ return `<div class="activity ${nowFlag?'activity-now':''}"><div class="activity-icon">${ic}</div><div><b>${title}</b><span>${sub}</span></div>${dest?`<button class="btn btn-soft" data-action="dest" data-dest="${dest}">Go there</button>`:''}</div>`; }
-  function timelineRows(ev){ const t=N(); return ev.schedule.map((s,i)=>{ const live=t>=new Date(s.start)&&t<new Date(s.end); const next=!live&&new Date(s.start)>t&&!ev.schedule.slice(0,i).some(x=>new Date(x.start)>t); return `<div class="timeline-row ${live?'live':next?'next':''}"><div class="timeline-time">${fmtTime(s.start)}</div><div class="timeline-line"><i class="timeline-dot"></i></div><div class="timeline-content"><b>${s.title}${live?' · LIVE':''}</b><p>${s.place} — ${s.detail}</p></div></div>`; }).join(''); }
-  function bestFood(ev){ return [...ev.food].sort((a,b)=>a.crowd-b.crowd)[0]; }
-  function bestParking(ev){ return [...ev.parking].sort((a,b)=>(a.used/a.total)-(b.used/b.total))[0]; }
-  function bestHotel(ev){ return [...ev.hotels].sort((a,b)=>b.rooms-a.rooms)[0]; }
-  function bestTransport(ev){ return [...ev.transport].sort((a,b)=>a.load-b.load)[0]; }
+  function topApp(){const u=session();return `<header class="appbar"><div class="appbar-left"><div class="brand"><div class="brand-mark">E</div><span>EventFlow</span></div><span class="role-chip">${u?.role==='management'?'Event Management':u?.role||''}</span></div><div class="appbar-right"><span style="font-size:10px;color:#7f92aa">${esc(u?.name||'')}</span><button class="btn sm" id="signout">Sign out</button></div></header>`}
+  function bindSignout(){app.querySelector('#signout')?.addEventListener('click',()=>{localStorage.removeItem(K.session);landing()})}
 
-  const DEST = {
-    seat:{label:'Your place',turn:'Take the next right',sub:'Then follow EventFlow signs to your block.',eta:'11 min',distance:'1.8 km'},
-    food:{label:'East Food Street',turn:'Keep left after East Gate',sub:'Low queue food zone is ahead.',eta:'8 min',distance:'1.2 km'},
-    store:{label:'Event Store',turn:'Take the second left',sub:'Store is beside the east concourse.',eta:'7 min',distance:'950 m'},
-    washroom:{label:'Washroom B',turn:'Go straight for 300 m',sub:'Use the next indoor corridor.',eta:'5 min',distance:'620 m'},
-    medical:{label:'Medical Point',turn:'Turn right at the service road',sub:'Medical team is beside Gate East.',eta:'6 min',distance:'780 m'},
-    parking:{label:'P3 East Parking',turn:'Take East Access Road',sub:'Do not park on Third Road.',eta:'9 min',distance:'2.1 km'},
-    hotel:{label:'Recommended Stay',turn:'Continue toward Metro Link',sub:'Shuttle pickup is outside East Gate.',eta:'18 min',distance:'3.4 km'},
-    metro:{label:'Metro East',turn:'Keep right after the exit',sub:'Next metro shown in travel panel.',eta:'12 min',distance:'2.6 km'},
-    exit:{label:'South Gate Exit',turn:'Follow the south concourse',sub:'Lower pressure exit for your section.',eta:'8 min',distance:'1.1 km'}
-  };
+  function eventHub(filter='all'){destroyMap();const u=session();if(!u)return auth();const counts={live:DEMO_EVENTS.filter(e=>statusOf(e)==='live').length,upcoming:DEMO_EVENTS.filter(e=>statusOf(e)==='upcoming').length,done:DEMO_EVENTS.filter(e=>statusOf(e)==='done').length};const rows=DEMO_EVENTS.filter(e=>filter==='all'||statusOf(e)===filter);app.innerHTML=`<div class="app-frame">${topApp()}<main class="main"><div class="page-head"><div><h1>Your events</h1><p>Choose an event first. Then EventFlow shows only what matters for your role.</p></div><div class="status-tabs">${[['all','All events'],['live',`Live · ${counts.live}`],['upcoming',`Upcoming · ${counts.upcoming}`],['done',`Completed · ${counts.done}`]].map(x=>`<button class="tab ${filter===x[0]?'active':''}" data-filter="${x[0]}">${x[1]}</button>`).join('')}</div></div><div class="dashboard-grid"><div class="kpi"><small>Live now</small><b>${counts.live}</b><span>events currently running</span></div><div class="kpi"><small>Upcoming</small><b>${counts.upcoming}</b><span>events still to come</span></div><div class="kpi"><small>Completed</small><b>${counts.done}</b><span>events already finished</span></div><div class="kpi"><small>Your role</small><b style="font-size:19px">${u.role==='management'?'Management':u.role[0].toUpperCase()+u.role.slice(1)}</b><span>role-specific event view</span></div></div><div class="event-list">${rows.map(e=>{const st=statusOf(e);return `<article class="event-card"><div class="event-name"><b>${esc(e.name)}</b><small>${esc(e.venue)} · ${e.eventId}</small></div><div><span class="meta-label">Time</span><span class="meta-value">${fmtT(e.start)} – ${fmtT(e.end)}</span></div><div><span class="meta-label">Guests</span><span class="meta-value">${e.expected.toLocaleString('en-IN')}</span></div><div><span class="badge ${st}">${st==='live'?'<i class="live-dot"></i> LIVE':st==='upcoming'?'UPCOMING':'COMPLETED'}</span></div><div><button class="btn ${st==='live'?'primary':''} sm" data-event="${e.id}">${u.role==='attendee'?'Open event':u.role==='operator'?'Open workspace':'Open control room'}</button></div></article>`}).join('')||'<div class="empty">No events in this list.</div>'}</div></main></div>`;bindSignout();app.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>eventHub(b.dataset.filter));app.querySelectorAll('[data-event]').forEach(b=>b.onclick=()=>openEvent(b.dataset.event));}
 
-  function navigation(){
-    const ev=e(); const d=DEST[state.destination]||DEST.seat; const safe=bestGate(ev); const busy=worstGate(ev);
-    return `<section class="page"><div class="page-head"><div><h2>Turn-by-turn event navigation</h2><p>This map is focused like a driving navigation screen: one route, next turn, ETA, busy road sections, easier gate and nearby event services.</p></div><button class="btn btn-dark" data-action="journey">Back to journey</button></div>
-      <div class="nav-cockpit"><div class="nav-world"><div class="nav-ground"><div class="city-grid"></div><div class="road r1"></div><div class="road r2"></div><div class="road r3"></div><div class="road r4"></div><div class="block blk1"></div><div class="block blk2"></div><div class="block blk3"></div><div class="block blk4"></div><div class="stadium" data-label="${ev.venue}"></div></div>
-        <svg class="route-layer" viewBox="0 0 1000 720" preserveAspectRatio="none"><path class="route-safe-outline" d="M120 610 C210 580 245 520 330 500 C420 480 475 475 525 430 C590 370 610 320 675 310 C730 302 755 325 790 350"/><path class="route-safe" d="M120 610 C210 580 245 520 330 500 C420 480 475 475 525 430 C590 370 610 320 675 310 C730 302 755 325 790 350"/><path class="route-busy" d="M330 500 C390 400 450 250 535 170"/><path class="route-alt" d="M120 610 C180 530 220 430 325 360 C410 300 470 270 535 170"/></svg>
-        <div class="crowd-zone cz-red"></div><div class="crowd-zone cz-green"></div>
-        <div class="gate gate-n">N<br>${ev.gates.North}%</div><div class="gate gate-e">E<br>${ev.gates.East}%</div><div class="gate gate-s">S<br>${ev.gates.South}%</div><div class="gate gate-w">W<br>${ev.gates.West}%</div>
-        <div class="map-pin pin-start">YOU</div><div class="map-pin pin-park">P3</div><div class="map-pin pin-food">FOOD</div><div class="map-pin pin-hotel">STAY</div><div class="map-pin pin-metro">METRO</div><div class="vehicle-arrow"></div>
-        <div class="turn-banner"><div class="top"><div class="turn-arrow">↱</div><div><small>In 240 m</small><h3>${d.turn}</h3><p>${d.sub}</p></div></div></div>
-        <div class="nav-status"><div class="eta"><div><b>${d.eta}</b><span>ETA</span></div><div><b>${d.distance}</b><span>Distance</span></div><div><b>${safe}</b><span>Best gate</span></div></div><div class="traffic-card"><b>${busy} Gate is crowded.</b><br/>EventFlow is keeping you on the lower-pressure route through ${safe} Gate.</div></div>
-      </div><aside class="nav-side"><div class="section-label">Destination</div><h2>${d.label}</h2><p>${ev.name} · ${ev.venue}</p>
-        <div class="route-card best"><h4>Recommended route · ${safe} Gate</h4><p>Lower crowd pressure and easier movement.</p><footer><span>${d.eta}</span><span>${ev.gates[safe]}% crowd</span></footer></div>
-        <div class="route-card warn"><h4>Shorter route · ${busy} Gate</h4><p>Not recommended right now because the gate is very busy.</p><footer><span>+${Math.max(4,Math.round(ev.gates[busy]/12))} min wait</span><span>${ev.gates[busy]}% crowd</span></footer></div>
-        <div class="dest-grid">${Object.entries(DEST).map(([k,v])=>`<button class="dest-btn ${state.destination===k?'active':''}" data-action="dest" data-dest="${k}">${v.label}</button>`).join('')}</div>
-        <div class="info-stack"><div class="info-row"><span>Best parking</span><b>${bestParking(ev).name}<br>${bestParking(ev).walk} walk</b></div><div class="info-row"><span>Metro</span><b>${bestTransport(ev).name}<br>${bestTransport(ev).next}</b></div><div class="info-row"><span>Food</span><b>${bestFood(ev).name}<br>${bestFood(ev).wait}</b></div><div class="info-row"><span>Exit</span><b>${ev.exit}</b></div></div>
-      </aside></div></section>`;
-  }
+  function openEvent(id,view){const u=session();if(!u)return auth();if(u.role==='attendee')attendeeEvent(id,view||'overview');else if(u.role==='operator')operatorEvent(id,view||'overview');else managementEvent(id,view||'overview')}
 
-  function controlRoom(role){
-    const ev=e(); const active=activeSlot(ev); const best=bestGate(ev), worst=worstGate(ev); const tasks=read(STORE.tasks,TASKS).filter(t=>t.event===ev.id);
-    return `<section class="page"><div class="page-head"><div><h2>${role==='management'?'Live control room':'Live work picture'}</h2><p>${role==='management'?'Everything happening at the selected event: guests, gates, travel, food, stay and team work.':'The important live information your event team needs to act quickly.'}</p></div><span class="tag ${statusOf(ev)}">${statusText(statusOf(ev))}</span></div>
-      <div class="stats"><div class="stat"><small>Guests inside</small><b>${ev.inside.toLocaleString('en-IN')}</b><span>of ${ev.capacity.toLocaleString('en-IN')} capacity</span></div><div class="stat"><small>Live now</small><b style="font-size:17px">${active?.title||statusText(statusOf(ev))}</b><span>${active?.place||'No live slot'}</span></div><div class="stat"><small>Busiest gate</small><b>${worst}</b><span>${ev.gates[worst]}% crowd pressure</span></div><div class="stat"><small>Open jobs</small><b>${tasks.filter(t=>t.status!=='Done').length}</b><span>${tasks.filter(t=>t.priority==='High'&&t.status!=='Done').length} high priority</span></div></div>
-      <div class="grid2"><div class="panel"><div class="section-label">Gate crowd</div><h3>Where are people building up?</h3><p>Use this with the movement map to redirect guests and staff.</p><div class="crowd-bars">${Object.entries(ev.gates).map(([k,v])=>`<div class="crowd-row"><span>${k} Gate</span><div class="meter"><i style="width:${v}%;background:${crowdColor(v)}"></i></div><b>${v}%</b></div>`).join('')}</div><button class="btn btn-primary" style="margin-top:15px" data-action="map">Open navigation view</button></div>
-      <div class="panel"><div class="section-label">Live program</div><div class="timeline">${timelineRows(ev)}</div></div></div>
-      <div class="grid3" style="margin-top:14px">${serviceSummary('Travel & parking',`${bestParking(ev).name} is the best parking now.`,`${bestParking(ev).total-bestParking(ev).used} spaces`,`Road: ${bestParking(ev).road}`)}${serviceSummary('Food & stores',`${bestFood(ev).name} has the shortest queue.`,bestFood(ev).wait,`${bestFood(ev).crowd}% crowd`)}${serviceSummary('Stay & hotels',ev.stayNeeded?`${bestHotel(ev).name} has the most room capacity.`:'Stay is optional for this short event.',ev.hotels[0]?.rooms+' rooms',ev.hotels[0]?.travel||'—')}</div>
-      <div class="panel" style="margin-top:14px"><div class="section-label">Team work</div><h3>Jobs that keep the event moving</h3><p>Each job shows where, why, by when and what the operator needs.</p>${tasks.map(jobCard).join('')}</div>
-    </section>`;
-  }
-  function serviceSummary(title,text,k1,k2){ return `<div class="service-card"><h4>${title}</h4><p>${text}</p><div class="service-kpis"><div><small>Live detail</small><b>${k1}</b></div><div><small>Extra</small><b>${k2}</b></div></div></div>`; }
-  function jobCard(t){ return `<article class="job-card"><span class="tag ${t.priority==='High'?'live':'upcoming'}">${t.priority}</span><h4>${t.title}</h4><p>${t.why}</p><div class="job-meta"><div><small>Where</small><b>${t.where}</b></div><div><small>By when</small><b>${t.by}</b></div><div><small>Need</small><b>${t.need}</b></div><div><small>Status</small><b>${t.status}</b></div></div><div class="job-actions"><button class="btn btn-soft" data-action="task-detail" data-task="${t.id}">Open details</button><button class="btn btn-dark" data-action="map">Show work area</button></div></article>`; }
+  function side(event,role,view,items){return `<aside class="event-side"><button class="btn ghost sm" id="backEvents">← All events</button><div style="margin-top:16px"><span class="badge ${statusOf(event)}">${statusOf(event).toUpperCase()}</span><h2>${esc(event.name)}</h2><p>${esc(event.venue)}<br>${event.eventId}</p></div><nav class="side-nav">${items.map(x=>`<button class="${view===x[0]?'active':''}" data-view="${x[0]}">${x[1]}</button>`).join('')}</nav></aside>`}
+  function bindEventSide(eventId){app.querySelector('#backEvents')?.addEventListener('click',()=>eventHub());app.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>openEvent(eventId,b.dataset.view));bindSignout()}
 
-  function movementMap(){ return navigation(); }
+  function ticketBlock(e){const ticket=read(K.ticket,null);if(!ticket||ticket.event!==e.id)return `<div class="panel"><div class="panel-head"><h3>Connect your ticket</h3><span>Local demo</span></div><div class="panel-body"><p style="color:var(--muted);font-size:10px;line-height:1.6">Enter your ticket number. EventFlow will connect your event place, best gate and live guide.</p><div class="field"><label>Ticket number</label><input id="ticketNo" placeholder="Example: EF-908122"></div><button class="btn primary" id="connectTicket" style="margin-top:10px">Connect ticket</button></div></div>`;return `<div class="panel"><div class="panel-head"><h3>Your event pass</h3><span>${esc(ticket.no)}</span></div><div class="panel-body"><div class="quick-grid"><div class="quick"><small>Your place</small><b>${esc(e.seat)}</b><p>Saved from your ticket</p></div><div class="quick"><small>Best entry</small><b>East Gate</b><p>Lower crowd now</p></div><div class="quick"><small>Gate wait</small><b>${ops().gates.east.wait} min</b><p>Live operations update</p></div><div class="quick"><small>Exit</small><b>${esc(e.exit)}</b><p>May change near event end</p></div></div></div></div>`}
 
-  function servicesPage(){
-    const ev=e();
-    return `<section class="page"><div class="page-head"><div><h2>Food, stay, travel and parking</h2><p>EventFlow does not stop at the venue gate. It keeps the guest moving before, during and after the event.</p></div></div>
-      <div class="grid3">${ev.parking.map(p=>serviceSummary(p.name,`${p.road} · ${p.note}`,`${p.total-p.used} free`,`${p.walk} walk`)).join('')}</div>
-      <div class="grid2" style="margin-top:14px"><div class="panel"><div class="section-label">Food & stores</div><table class="table"><thead><tr><th>Place</th><th>Crowd</th><th>Wait</th><th>Status</th></tr></thead><tbody>${ev.food.map(f=>`<tr><td>${f.name}</td><td>${f.crowd}%</td><td>${f.wait}</td><td>${f.status}</td></tr>`).join('')}</tbody></table></div><div class="panel"><div class="section-label">Hotels & stay</div><table class="table"><thead><tr><th>Hotel</th><th>Distance</th><th>Rooms</th><th>Price</th></tr></thead><tbody>${ev.hotels.map(h=>`<tr><td>${h.name}<small>${h.travel}</small></td><td>${h.distance}</td><td>${h.rooms}</td><td>${h.price}</td></tr>`).join('')}</tbody></table></div></div>
-      <div class="panel" style="margin-top:14px"><div class="section-label">Travel out</div><table class="table"><thead><tr><th>Option</th><th>Load</th><th>Next</th><th>Note</th></tr></thead><tbody>${ev.transport.map(t=>`<tr><td>${t.name}</td><td>${t.load}%</td><td>${t.next}</td><td>${t.detail}</td></tr>`).join('')}</tbody></table></div>
-    </section>`;
-  }
+  function liveProgram(e){const rows=e.program;return `<div class="timeline">${rows.map(p=>{const st=programState(p);return `<div class="timeline-row"><time>${fmtT(p.start)}</time><i class="timeline-dot ${st==='live'?'live':''}"></i><div class="timeline-copy"><b>${esc(p.name)}</b><p>${esc(p.detail)}</p></div><span class="badge ${st==='live'?'live':st==='upcoming'?'upcoming':'done'}">${st==='live'?'LIVE':st==='upcoming'?'NEXT':'DONE'}</span></div>`}).join('')}</div>`}
 
-  function tasksPage(){
-    const all=read(STORE.tasks,TASKS); const list=all.filter(t=>t.event===state.eventId); const selected=all.find(t=>t.id===state.selectedTask)||list[0];
-    return `<section class="page"><div class="page-head"><div><h2>${state.role==='operator'?'Your event jobs':'Teams & jobs'}</h2><p>Every job has a clear place, reason, deadline, route and steps. Operators should never receive only “do this”.</p></div></div><div class="grid2"><div>${list.map(jobCard).join('')}</div><div class="panel">${selected?taskDetail(selected):'<p>No task selected.</p>'}</div></div></section>`;
-  }
-  function taskDetail(t){ return `<div class="section-label">${t.id} · ${t.priority} priority</div><h3 style="font-size:22px">${t.title}</h3><p>${t.why}</p><div class="job-meta"><div><small>Where</small><b>${t.where}</b></div><div><small>By when</small><b>${t.by}</b></div><div><small>Need</small><b>${t.need}</b></div><div><small>Route</small><b>${t.route}</b></div></div><div class="section-label" style="margin-top:20px">How to do it</div><ol style="color:#aebed0;font-size:10px;line-height:1.8;padding-left:18px">${t.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="job-actions"><button class="btn btn-primary" data-action="task-status" data-task="${t.id}" data-status="Accepted">Accept</button><button class="btn btn-dark" data-action="task-status" data-task="${t.id}" data-status="Working">Start work</button><button class="btn btn-soft" data-action="task-status" data-task="${t.id}" data-status="Done">Mark done</button><button class="btn btn-dark" data-action="map">Show on map</button></div>`; }
+  function attendeeEvent(id,view='overview'){destroyMap();const e=eventBy(id);const o=ops();const items=[['overview','Event home'],['live','What is live now'],['navigate','Go somewhere'],['services','Food & services'],['travel','Travel · Parking · Stay'],['timeline','Full schedule']];app.innerHTML=`<div class="app-frame">${topApp()}<div class="event-shell">${side(e,'attendee',view,items)}<main class="event-content"><div class="event-banner"><div><span class="badge ${statusOf(e)}">${statusOf(e).toUpperCase()}</span><h1>${esc(e.name)}</h1><p>${fmtD(e.start)} · ${fmtT(e.start)} – ${fmtT(e.end)} · ${esc(e.venue)}</p></div>${statusOf(e)==='live'?'<button class="btn primary" data-view="navigate">Go to event →</button>':''}</div><div id="eventView">${attendeeView(e,view,o)}</div></main></div></div>`;bindEventSide(e.id);bindAttendee(e,view);if(view==='navigate')setTimeout(()=>initRealMap(e,'attendee'),0)}
+  function attendeeView(e,view,o){if(view==='overview')return `${ticketBlock(e)}<div class="grid2" style="margin-top:12px"><div class="panel"><div class="panel-head"><h3>What is happening now</h3><span>Updates automatically</span></div><div class="panel-body">${liveProgram(e)}</div></div><div class="panel"><div class="panel-head"><h3>Best choices right now</h3><span>Live operations</span></div><div class="panel-body"><div class="live-feed"><div class="feed-item"><i class="feed-dot" style="background:var(--green)"></i><div><b>Use East Gate</b><p>${o.gates.east.wait} min wait. North Gate is ${o.gates.north.crowd}% crowded.</p></div><time>Now</time></div><div class="feed-item"><i class="feed-dot" style="background:var(--green)"></i><div><b>East Food Street is free now</b><p>${o.food.foodE.wait} min wait. North Food Court is busy.</p></div><time>Live</time></div><div class="feed-item"><i class="feed-dot" style="background:var(--blue)"></i><div><b>Parking P3 has space</b><p>${o.parking.p3.total-o.parking.p3.used} spaces free.</p></div><time>Live</time></div><div class="feed-item"><i class="feed-dot" style="background:var(--violet)"></i><div><b>${esc(o.transport.shuttle.next)}</b><p>Additional transport is ${o.transport.shuttle.active?'active':'not active'}.</p></div><time>Live</time></div></div></div></div></div>`;
+    if(view==='live')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Live program</h3><span>Now / next / done</span></div><div class="panel-body">${liveProgram(e)}</div></div><div class="panel"><div class="panel-head"><h3>Live changes from event teams</h3><span>Same-browser demo sync</span></div><div class="panel-body">${feedHtml(o.logs)}</div></div></div>`;
+    if(view==='navigate')return navigationHtml(e,o);
+    if(view==='services')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Food & stores</h3><span>Live wait</span></div><div class="panel-body">${serviceRowsFood(o)}</div></div><div class="panel"><div class="panel-head"><h3>Help points</h3><span>Tap Go there</span></div><div class="panel-body"><div class="service-list">${[['Medical Point A','Open now','Near West concourse','medical'],['Washroom East','Low wait','Near East Food Street','washroom'],['Fan Store','2 min wait','South-East concourse','store']].map(x=>`<div class="service-row"><div class="service-icon">${x[3]==='medical'?'✚':x[3]==='washroom'?'WC':'★'}</div><div><b>${x[0]}</b><p>${x[1]} · ${x[2]}</p></div><div></div><button class="btn sm" data-dest="${x[3]}">Go there</button></div>`).join('')}</div></div></div></div>`;
+    if(view==='travel')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Parking</h3><span>Live spaces</span></div><div class="panel-body">${serviceRowsParking(o)}</div></div><div class="panel"><div class="panel-head"><h3>Transport & stay</h3><span>End-to-end</span></div><div class="panel-body"><div class="service-list"><div class="service-row"><div class="service-icon">M</div><div><b>Churchgate rail / metro link</b><p>${o.transport.metro.next} · Load ${o.transport.metro.load}%</p></div><div></div><button class="btn sm" data-dest="metro">Go there</button></div><div class="service-row"><div class="service-icon">S</div><div><b>Shuttle S3</b><p>${o.transport.shuttle.next} · Load ${o.transport.shuttle.load}%</p></div><div></div><button class="btn sm" data-dest="metro">Route</button></div><div class="service-row"><div class="service-icon">⌂</div><div><b>Event Stay Partner</b><p>42 rooms left · ₹3,800 · hotel pickup support</p></div><div></div><button class="btn sm" data-dest="hotel">Go there</button></div></div></div></div></div>`;
+    if(view==='timeline')return `<div class="panel"><div class="panel-head"><h3>Full event schedule</h3><span>${fmtT(e.start)} – ${fmtT(e.end)}</span></div><div class="panel-body">${liveProgram(e)}</div></div>`;return ''}
+  function bindAttendee(e,view){app.querySelector('#connectTicket')?.addEventListener('click',()=>{const no=app.querySelector('#ticketNo').value.trim();if(!no){toast('Enter a ticket number');return}write(K.ticket,{event:e.id,no});toast('Ticket connected','Your place and best gate are ready.');attendeeEvent(e.id,'overview')});app.querySelectorAll('[data-dest]').forEach(b=>b.onclick=()=>{sessionStorage.setItem('ef_dest',b.dataset.dest);attendeeEvent(e.id,'navigate')});}
 
-  function reportsPage(){
-    const ev=e();
-    return `<section class="page"><div class="page-head"><div><h2>Event reports</h2><p>A clear summary of guest movement, service pressure and team response.</p></div></div><div class="stats"><div class="stat"><small>Event health</small><b>${ev.health}/100</b><span>Overall event flow</span></div><div class="stat"><small>Guest load</small><b>${Math.round(ev.inside/ev.capacity*100)}%</b><span>Venue occupancy</span></div><div class="stat"><small>Best gate</small><b>${bestGate(ev)}</b><span>${ev.gates[bestGate(ev)]}% pressure</span></div><div class="stat"><small>Food wait</small><b>${bestFood(ev).wait}</b><span>Best available food zone</span></div></div><div class="grid2"><div class="panel"><div class="section-label">Gate pressure</div><div class="crowd-bars">${Object.entries(ev.gates).map(([k,v])=>`<div class="crowd-row"><span>${k}</span><div class="meter"><i style="width:${v}%;background:${crowdColor(v)}"></i></div><b>${v}%</b></div>`).join('')}</div></div><div class="panel"><div class="section-label">Event program</div><div class="timeline">${timelineRows(ev)}</div></div></div></section>`;
-  }
+  function feedHtml(logs){return `<div class="live-feed">${logs.slice(0,9).map(l=>`<div class="feed-item"><i class="feed-dot" style="background:${l.type==='gate'?'var(--cyan)':l.type==='food'?'var(--amber)':l.type==='parking'?'var(--blue)':'var(--violet)'}"></i><div><b>${esc(l.title)}</b><p>${esc(l.detail)}</p></div><time>${Math.max(0,Math.round((Date.now()-l.ts)/60000))}m</time></div>`).join('')}</div>`}
+  function serviceRowsFood(o){return `<div class="service-list">${[['East Food Street','foodE','🍴'],['North Food Court','foodN','🍴'],['Fan Store','store','★']].map(([name,k,ico])=>{const s=o.food[k];const level=s.wait>15?'red':s.wait>7?'amber':'green';return `<div class="service-row"><div class="service-icon">${ico}</div><div><b>${name}</b><p>${s.operator} · ${s.open?'Open':'Closed'} · ${s.free?'Free now':'Active'}</p></div><div class="bar ${level}"><i style="width:${clamp(s.wait*4,8,100)}%"></i></div><div class="service-state">${s.wait} min</div></div>`}).join('')}</div>`}
+  function serviceRowsParking(o,actions=false){return `<div class="service-list">${[['P1 North','p1'],['P3 East','p3'],['P4 Overflow','p4']].map(([name,k])=>{const s=o.parking[k],free=s.total-s.used,pct=Math.round(s.used/s.total*100),level=pct>90?'red':pct>70?'amber':'green';return `<div class="service-row"><div class="service-icon">P</div><div><b>${name}</b><p>${s.operator} · ${free.toLocaleString('en-IN')} spaces free</p></div><div class="bar ${level}"><i style="width:${pct}%"></i></div><div class="service-state">${pct}%</div>${actions?`<div class="mini-actions"><button class="btn sm" data-op="freeParking" data-key="${k}">Free 120 spaces</button></div>`:''}</div>`}).join('')}</div>`}
 
-  function mainContent(){
-    if(state.tab==='events') return eventsPage();
-    if(state.role==='attendee'){
-      if(state.tab==='journey') return attendeeJourney();
-      if(state.tab==='navigate') return navigation();
-      if(state.tab==='services') return servicesPage();
-    }
-    if(state.tab==='overview') return controlRoom(state.role);
-    if(state.tab==='map') return movementMap();
-    if(state.tab==='tasks') return tasksPage();
-    if(state.tab==='services') return servicesPage();
-    if(state.tab==='journey') return attendeeJourney();
-    if(state.tab==='reports') return reportsPage();
-    return eventsPage();
-  }
+  function navigationHtml(e,o){return `<div class="nav-layout"><div class="map-wrap"><div id="realMap" class="real-map"></div><div id="mapFallback" class="map-fallback"><div class="fallback-box"><div class="eyebrow">Loading real map</div><h3>Preparing navigation…</h3><p>EventFlow is loading OpenStreetMap roads. If map tiles are blocked, the route steps and live event status still remain available on the right.</p></div></div><div class="nav-topcard"><div class="turn-row"><div class="turn-icon" id="turnIcon">↗</div><div class="turn-copy"><small>Next direction</small><h3 id="turnTitle">Take the safer East Gate route</h3><p id="turnDetail">North Gate is ${o.gates.north.crowd}% crowded · East Gate wait ${o.gates.east.wait} min</p></div></div><div class="nav-eta"><div><b id="etaMin">12 min</b><span>ETA</span></div><div><b id="etaDist">2.8 km</b><span>distance</span></div><div><b>East Gate</b><span>recommended entry</span></div></div></div><div class="map-tools"><button class="map-tool" id="locateMe" title="Use my location">◎</button><button class="map-tool" id="recenter" title="Recenter">⌂</button><button class="map-tool" id="tiltMap" title="3D view">3D</button></div><div class="map-legend"><div class="legend-item"><i class="legend-dot" style="background:var(--green)"></i> easier route</div><div class="legend-item"><i class="legend-dot" style="background:var(--red)"></i> heavy crowd</div><div class="legend-item"><i class="legend-dot" style="background:var(--blue)"></i> parking</div><div class="legend-item"><i class="legend-dot" style="background:var(--amber)"></i> food</div></div></div><aside class="nav-sidepanel"><h2>Go anywhere inside the event</h2><p>Choose a place. EventFlow combines the road route with live event operations.</p><div class="destination-grid">${[['event','My place'],['food','Food'],['parking','Parking'],['medical','Medical'],['metro','Metro / exit'],['hotel','Stay']].map(x=>`<button class="destination ${((sessionStorage.getItem('ef_dest')||'event')===x[0])?'active':''}" data-mapdest="${x[0]}">${x[1]}</button>`).join('')}</div><div style="margin-top:14px"><span class="meta-label">Recommended route</span><div class="route-choice best"><h4>Safer route · East Gate</h4><p>A little longer, but avoids the ${o.gates.north.crowd}% North Gate crowd.</p><div class="route-meta"><span>${o.gates.east.wait} min gate wait</span><span>Lower crowd</span></div></div><div class="route-choice"><h4>Fastest road only</h4><p>May pass close to the North Gate crowd. EventFlow does not recommend it now.</p></div></div><div style="margin-top:14px"><span class="meta-label">What is happening around you</span><div class="live-card"><div class="live-card-head"><h4>East Food Street</h4><span class="badge green">FREE NOW</span></div><p>${o.food.foodE.wait} min wait · operator: ${esc(o.food.foodE.operator)}</p><footer><span>Food</span><span>Updated live</span></footer></div><div class="live-card"><div class="live-card-head"><h4>Parking P3</h4><span class="badge green">SPACE</span></div><p>${(o.parking.p3.total-o.parking.p3.used).toLocaleString('en-IN')} spaces free · ${esc(o.parking.p3.operator)}</p><footer><span>Parking</span><span>Best now</span></footer></div><div class="live-card"><div class="live-card-head"><h4>North Gate</h4><span class="badge red">${o.gates.north.crowd}% CROWD</span></div><p>${o.gates.north.open?'Open':'Closed'} · ${o.gates.north.wait} min wait · ${esc(o.gates.north.operator)}</p></div><div class="live-card"><div class="live-card-head"><h4>Shuttle S3</h4><span class="badge ${o.transport.shuttle.active?'green':'done'}">${o.transport.shuttle.active?'ACTIVE':'OFF'}</span></div><p>${esc(o.transport.shuttle.next)} · load ${o.transport.shuttle.load}%</p></div></div></aside></div>`}
 
-  function render(){
-    if(state.screen==='landing') app.innerHTML=landing();
-    else if(state.screen==='auth') app.innerHTML=auth();
-    else app.innerHTML=appShell(mainContent());
-    bind();
-  }
+  function ensureEventPoints(e){if(e.points)return e.points;const [lng,lat]=e.center;return {gates:[{id:'north',name:'North Gate',coord:[lng,lat+.0011],crowd:58,open:true,wait:8},{id:'east',name:'East Gate',coord:[lng+.0012,lat],crowd:43,open:true,wait:5},{id:'south',name:'South Gate',coord:[lng,lat-.0011],crowd:67,open:true,wait:10},{id:'west',name:'West Gate',coord:[lng-.0012,lat],crowd:51,open:true,wait:7}],parking:[{id:'p3',name:'Parking P3',coord:[lng+.0023,lat+.001],used:710,total:1800,status:'Space available',road:'East access'}],food:[{id:'foodE',name:'Main Food Street',coord:[lng+.0007,lat+.0004],wait:5,status:'Free now',open:true}],medical:[{id:'med1',name:'Medical Help',coord:[lng-.0006,lat-.0003],status:'Open'}],metro:[{id:'metro',name:'Transit Point',coord:[lng+.0028,lat-.002],status:'Normal',next:'Next service in 8 min'}],hotels:[{id:'hotel',name:'Event Stay',coord:[lng+.003,lat+.002],status:'Rooms available',price:'₹3,200'}]}}
+  function destCoord(e,dest){const p=ensureEventPoints(e);if(dest==='food')return p.food[0].coord;if(dest==='parking')return p.parking[0].coord;if(dest==='medical')return p.medical[0].coord;if(dest==='metro')return p.metro[0].coord;if(dest==='hotel')return p.hotels[0].coord;const east=p.gates.find(g=>g.id==='east')||p.gates[0];return east.coord}
+  async function initRealMap(e,role){destroyMap();const el=document.getElementById('realMap');if(!el)return;const fallback=document.getElementById('mapFallback');if(!window.maplibregl){fallback.innerHTML='<div class="fallback-box"><h3>Map library did not load</h3><p>Internet access is needed for the real road map. Event operations and route guidance are still available in the side panel.</p></div>';return}try{map=new maplibregl.Map({container:'realMap',style:'https://tiles.openfreemap.org/styles/liberty',center:e.center,zoom:14.7,pitch:58,bearing:-18,attributionControl:true});map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');const timed=setTimeout(()=>{if(fallback)fallback.style.display='grid';},9000);map.once('load',()=>{clearTimeout(timed);if(fallback)fallback.style.display='none';addMapData(e);const dest=sessionStorage.getItem('ef_dest')||'event';routeTo(e,dest,false)});map.on('error',ev=>{console.warn('Map error',ev?.error||ev)});document.getElementById('recenter')?.addEventListener('click',()=>map?.easeTo({center:e.center,zoom:14.7,pitch:58,bearing:-18,duration:900}));document.getElementById('tiltMap')?.addEventListener('click',()=>map?.easeTo({pitch:(map.getPitch()>20?0:58),bearing:(map.getPitch()>20?0:-18),duration:700}));document.getElementById('locateMe')?.addEventListener('click',()=>locateAndRoute(e));document.querySelectorAll('[data-mapdest]').forEach(b=>b.onclick=()=>{sessionStorage.setItem('ef_dest',b.dataset.mapdest);document.querySelectorAll('[data-mapdest]').forEach(x=>x.classList.toggle('active',x===b));routeTo(e,b.dataset.mapdest,!!userMarker)});}catch(err){console.error(err);fallback.innerHTML='<div class="fallback-box"><h3>Could not open the live road map</h3><p>The map service may be blocked on this connection. Try again on a normal internet connection; EventFlow will still show live gates, parking, food and route instructions.</p></div>';}}
 
-  function bind(){
-    document.querySelectorAll('[data-action]').forEach(el=>el.addEventListener('click',()=>handle(el.dataset)));
-    const af=document.getElementById('auth-form'); if(af) af.addEventListener('submit',authSubmit);
-    const tf=document.getElementById('ticket-form'); if(tf) tf.addEventListener('submit',ticketSubmit);
-  }
+  function markerEl(type,busy=false){const d=document.createElement('div');d.className=`map-pin ${type}${busy?' busy':''}`;d.textContent=type==='gate'?'G':type==='parking'?'P':type==='food'?'🍴':type==='medical'?'✚':type==='metro'?'M':'⌂';return d}
+  function addMapData(e){if(!map)return;const p=ensureEventPoints(e),o=ops();const gateOps=o.gates;[...p.gates].forEach(g=>{const state=gateOps[g.id]||g;new maplibregl.Marker({element:markerEl('gate',(state.crowd||g.crowd)>80)}).setLngLat(g.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(g.name)}</b><p>${state.open===false?'Closed':'Open'} · crowd ${state.crowd||g.crowd}% · wait ${state.wait||g.wait} min</p><p>${esc(state.operator||'Event entry team')}</p></div>`)).addTo(map)});p.parking.forEach(x=>{const s=o.parking[x.id]||x;new maplibregl.Marker({element:markerEl('parking')}).setLngLat(x.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(x.name)}</b><p>${(s.total-s.used).toLocaleString('en-IN')} spaces free</p><p>${esc(s.operator||x.road||'Parking team')}</p></div>`)).addTo(map)});p.food.forEach(x=>{const s=o.food[x.id]||x;new maplibregl.Marker({element:markerEl('food')}).setLngLat(x.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(x.name)}</b><p>${s.open===false?'Closed':`${s.wait??x.wait} min wait`} · ${s.free?'Free now':x.status||'Active'}</p><p>${esc(s.operator||'Food operator')}</p></div>`)).addTo(map)});p.medical.forEach(x=>new maplibregl.Marker({element:markerEl('medical')}).setLngLat(x.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(x.name)}</b><p>${esc(x.status)}</p></div>`)).addTo(map));p.metro.forEach(x=>new maplibregl.Marker({element:markerEl('metro')}).setLngLat(x.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(x.name)}</b><p>${esc(x.next||x.status)}</p></div>`)).addTo(map));p.hotels.forEach(x=>new maplibregl.Marker({element:markerEl('hotel')}).setLngLat(x.coord).setPopup(new maplibregl.Popup({offset:20}).setHTML(`<div class="map-popup"><b>${esc(x.name)}</b><p>${esc(x.status)} · ${esc(x.price||'')}</p></div>`)).addTo(map));const north=p.gates.find(g=>g.id==='north'),east=p.gates.find(g=>g.id==='east');map.addSource('crowdZones',{type:'geojson',data:{type:'FeatureCollection',features:p.gates.map(g=>{const s=gateOps[g.id]||g;return{type:'Feature',geometry:{type:'Point',coordinates:g.coord},properties:{crowd:s.crowd||g.crowd}}})}});map.addLayer({id:'crowdCircles',type:'circle',source:'crowdZones',paint:{'circle-radius':['interpolate',['linear'],['get','crowd'],20,18,100,55],'circle-color':['interpolate',['linear'],['get','crowd'],0,'#65e0a7',55,'#ffc767',80,'#ff8e68',100,'#ff667b'],'circle-opacity':.22,'circle-stroke-width':1.5,'circle-stroke-color':['interpolate',['linear'],['get','crowd'],0,'#65e0a7',55,'#ffc767',80,'#ff8e68',100,'#ff667b']}});if(north&&east){map.addSource('busyCorridor',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:[[north.coord[0]-.0015,north.coord[1]+.0015],north.coord,[east.coord[0]-.0004,east.coord[1]+.0010]]}}});map.addLayer({id:'busyCorridor',type:'line',source:'busyCorridor',paint:{'line-color':'#ff667b','line-width':7,'line-opacity':.68,'line-dasharray':[1.2,1.4]}})}}
+  function demoStart(e){return [e.center[0]+.012,e.center[1]-.010]}
+  async function locateAndRoute(e){if(!navigator.geolocation){toast('Location is not supported');return}toast('Getting your location','Allow location access in the browser.');navigator.geolocation.getCurrentPosition(pos=>{const c=[pos.coords.longitude,pos.coords.latitude];if(userMarker)userMarker.setLngLat(c);else{const d=document.createElement('div');d.className='map-pin';d.style.background='#fff';d.textContent='●';userMarker=new maplibregl.Marker({element:d}).setLngLat(c).addTo(map)};map.flyTo({center:c,zoom:15.5,pitch:58,duration:1100});routeTo(e,sessionStorage.getItem('ef_dest')||'event',true)},err=>toast('Location not available',err.message),{enableHighAccuracy:true,timeout:10000,maximumAge:15000})}
+  async function routeTo(e,dest,useUser){if(!map)return;const start=useUser&&userMarker?userMarker.getLngLat().toArray():demoStart(e),end=destCoord(e,dest);if(routeAbort)routeAbort.abort();routeAbort=new AbortController();try{const url=`https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${end[0]},${end[1]}?alternatives=2&steps=true&geometries=geojson&overview=full`;const r=await fetch(url,{signal:routeAbort.signal});if(!r.ok)throw new Error('routing service');const data=await r.json();if(data.code!=='Ok'||!data.routes?.length)throw new Error('no route');const best=data.routes[0];drawRoute(best.geometry,'routeMain','#54e1d0',7);if(data.routes[1])drawRoute(data.routes[1].geometry,'routeAlt','#8a76ff',4,.55);const b=new maplibregl.LngLatBounds();best.geometry.coordinates.forEach(c=>b.extend(c));b.extend(end);map.fitBounds(b,{padding:{top:150,bottom:90,left:70,right:70},pitch:58,bearing:-18,duration:900,maxZoom:16.5});document.getElementById('etaMin').textContent=`${Math.max(1,Math.round(best.duration/60))} min`;document.getElementById('etaDist').textContent=`${(best.distance/1000).toFixed(1)} km`;const step=best.legs?.[0]?.steps?.find(s=>s.maneuver?.type!=='depart')||best.legs?.[0]?.steps?.[0];if(step){const mod=step.maneuver?.modifier||'',name=step.name||'event road',type=step.maneuver?.type||'continue';const arrow=mod.includes('left')?'↰':mod.includes('right')?'↱':'↑';document.getElementById('turnIcon').textContent=arrow;document.getElementById('turnTitle').textContent=`${type==='turn'?'Turn':'Continue'} ${mod} on ${name}`.replace(/\s+/g,' ');document.getElementById('turnDetail').textContent=`${Math.max(20,Math.round(step.distance))} m · safer event route uses the lower-crowd gate`}}catch(err){if(err.name==='AbortError')return;const coords=[start,[e.center[0]+.006,e.center[1]-.004],end];drawRoute({type:'LineString',coordinates:coords},'routeMain','#54e1d0',7);document.getElementById('turnTitle').textContent='Follow the EventFlow safe route';document.getElementById('turnDetail').textContent='Road routing is temporarily unavailable · live event guidance is still active';map.easeTo({center:e.center,zoom:14.5,pitch:58,bearing:-18,duration:700})}}
+  function drawRoute(geometry,id,color,width,opacity=1){if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id);map.addSource(id,{type:'geojson',data:{type:'Feature',geometry}});map.addLayer({id,type:'line',source:id,layout:{'line-join':'round','line-cap':'round'},paint:{'line-color':color,'line-width':width,'line-opacity':opacity}})}
 
-  function handle(d){
-    switch(d.action){
-      case 'auth': state.screen='auth'; render(); break;
-      case 'back-home': state.screen='landing'; render(); break;
-      case 'open-live': document.getElementById('live-events')?.scrollIntoView({behavior:'smooth'}); break;
-      case 'auth-role': state.authRole=d.role; render(); break;
-      case 'toggle-auth': state.authMode=state.authMode==='signin'?'signup':'signin'; render(); break;
-      case 'demo-attendee': loginDemo('attendee'); break;
-      case 'logout': localStorage.removeItem(STORE.session); session=null; state={...state,screen:'landing',role:'attendee',tab:'events'}; render(); break;
-      case 'tab': state.tab=d.tab; render(); break;
-      case 'events': state.tab='events'; render(); break;
-      case 'filter': state.filter=d.filter; render(); break;
-      case 'select-event': state.eventId=d.event; state.tab=state.role==='attendee'?'journey':'overview'; render(); break;
-      case 'go-event': state.eventId=d.event; state.tab='journey'; render(); break;
-      case 'journey': state.tab='journey'; render(); break;
-      case 'dest': state.destination=d.dest; state.tab='navigate'; render(); break;
-      case 'map': state.tab='map'; render(); break;
-      case 'clear-ticket': state.ticket=null; localStorage.removeItem(STORE.ticket); render(); break;
-      case 'task-detail': state.selectedTask=d.task; if(state.tab!=='tasks') state.tab='tasks'; render(); break;
-      case 'task-status': updateTask(d.task,d.status); break;
-    }
-  }
+  function managementEvent(id,view='overview'){destroyMap();const e=eventBy(id),o=ops();const items=[['overview','Live control'],['services','Services & capacity'],['people','People movement'],['operators','Operators & jobs'],['map','Live operations map'],['timeline','Timeline']];app.innerHTML=`<div class="app-frame">${topApp()}<div class="event-shell">${side(e,'management',view,items)}<main class="event-content"><div class="event-banner"><div><span class="badge ${statusOf(e)}">${statusOf(e).toUpperCase()}</span><h1>${esc(e.name)} · Control Room</h1><p>${e.eventId} · ${esc(e.venue)} · all services in one live view</p></div><button class="btn primary" data-view="map">Open live map</button></div>${managementView(e,view,o)}</main></div></div>`;bindEventSide(e.id);bindOpsActions(e,'management');if(view==='map')setTimeout(()=>initRealMap(e,'management'),0)}
+  function managementView(e,view,o){if(view==='overview')return `<div class="dashboard-grid"><div class="kpi"><small>Guests inside</small><b>${e.inside.toLocaleString('en-IN')}</b><span>of ${e.expected.toLocaleString('en-IN')} expected</span></div><div class="kpi"><small>Busiest gate</small><b>${o.gates.north.crowd}%</b><span>North Gate · ${o.gates.north.wait} min</span></div><div class="kpi"><small>Best parking</small><b>P3</b><span>${(o.parking.p3.total-o.parking.p3.used).toLocaleString('en-IN')} spaces free</span></div><div class="kpi"><small>Best food area</small><b>${o.food.foodE.wait} min</b><span>East Food Street</span></div></div><div class="grid2"><div class="panel"><div class="panel-head"><h3>Live event operations</h3><span>every service</span></div><div class="panel-body">${fullServiceSummary(o)}</div></div><div class="panel"><div class="panel-head"><h3>Latest team actions</h3><span>operator updates</span></div><div class="panel-body">${feedHtml(o.logs)}</div></div></div>`;
+    if(view==='services')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Gates</h3><span>open / crowd / wait</span></div><div class="panel-body">${gateRows(o,true)}</div></div><div class="panel"><div class="panel-head"><h3>Parking</h3><span>free spaces</span></div><div class="panel-body">${serviceRowsParking(o,true)}</div></div></div><div class="grid2" style="margin-top:12px"><div class="panel"><div class="panel-head"><h3>Food & stores</h3><span>wait / operator</span></div><div class="panel-body">${foodOpsRows(o,true)}</div></div><div class="panel"><div class="panel-head"><h3>Travel</h3><span>metro / shuttle</span></div><div class="panel-body"><div class="service-list"><div class="service-row"><div class="service-icon">M</div><div><b>Metro / rail</b><p>${o.transport.metro.next}</p></div><div class="bar amber"><i style="width:${o.transport.metro.load}%"></i></div><div class="service-state">${o.transport.metro.load}%</div></div><div class="service-row"><div class="service-icon">S</div><div><b>Shuttle S3</b><p>${o.transport.shuttle.next}</p></div><div class="bar green"><i style="width:${o.transport.shuttle.load}%"></i></div><div class="service-state">${o.transport.shuttle.active?'Active':'Off'}</div></div></div><div class="mini-actions"><button class="btn sm" data-op="deployShuttle">Deploy extra shuttle</button></div></div></div></div>`;
+    if(view==='people')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>People movement</h3><span>where guests are going</span></div><div class="panel-body">${gateRows(o,false)}<div style="height:12px"></div>${serviceRowsFood(o)}</div></div><div class="panel"><div class="panel-head"><h3>What needs attention</h3><span>automatic demo rules</span></div><div class="panel-body"><div class="live-feed"><div class="feed-item"><i class="feed-dot" style="background:var(--red)"></i><div><b>North Gate is overloaded</b><p>Move new arrivals toward East Gate and open another line.</p></div><time>High</time></div><div class="feed-item"><i class="feed-dot" style="background:var(--amber)"></i><div><b>North Food Court wait is high</b><p>Promote East Food Street to guests.</p></div><time>Med</time></div><div class="feed-item"><i class="feed-dot" style="background:var(--blue)"></i><div><b>P1 is nearly full</b><p>Redirect cars to P3 and P4.</p></div><time>High</time></div></div></div></div></div>`;
+    if(view==='operators')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Operators working now</h3><span>zone ownership</span></div><div class="panel-body"><div class="service-list">${[['Aisha','East Gate','Extra line open','Entry'],['Rohit','North Gate','Queue control','Entry'],['Parking Team C','P3','Guiding arrivals','Parking'],['Vendor East','East Food Street','Low wait','Food'],['Transit Team','East pickup','Shuttle active','Travel']].map(x=>`<div class="service-row"><div class="service-icon">${x[0][0]}</div><div><b>${x[0]}</b><p>${x[1]} · ${x[2]}</p></div><div></div><div class="service-state">${x[3]}</div></div>`).join('')}</div></div></div><div class="panel"><div class="panel-head"><h3>Recent actions</h3><span>shared with attendees</span></div><div class="panel-body">${feedHtml(o.logs)}</div></div></div>`;
+    if(view==='map')return navigationHtml(e,o);
+    if(view==='timeline')return `<div class="panel"><div class="panel-head"><h3>Event timeline</h3><span>live event phase</span></div><div class="panel-body">${liveProgram(e)}</div></div>`;return ''}
+  function fullServiceSummary(o){return `<div class="service-list"><div class="service-row"><div class="service-icon">G</div><div><b>North Gate</b><p>${o.gates.north.operator} · ${o.gates.north.open?'Open':'Closed'}</p></div><div class="bar red"><i style="width:${o.gates.north.crowd}%"></i></div><div class="service-state">${o.gates.north.crowd}%</div></div><div class="service-row"><div class="service-icon">P</div><div><b>Parking P3</b><p>${o.parking.p3.total-o.parking.p3.used} spaces free</p></div><div class="bar green"><i style="width:${Math.round(o.parking.p3.used/o.parking.p3.total*100)}%"></i></div><div class="service-state">Space</div></div><div class="service-row"><div class="service-icon">🍴</div><div><b>East Food Street</b><p>${o.food.foodE.operator} · ${o.food.foodE.free?'Free now':'Active'}</p></div><div class="bar green"><i style="width:${o.food.foodE.wait*4}%"></i></div><div class="service-state">${o.food.foodE.wait} min</div></div><div class="service-row"><div class="service-icon">S</div><div><b>Shuttle S3</b><p>${o.transport.shuttle.next}</p></div><div class="bar green"><i style="width:${o.transport.shuttle.load}%"></i></div><div class="service-state">${o.transport.shuttle.active?'Active':'Off'}</div></div></div>`}
+  function gateRows(o,actions=false){return `<div class="service-list">${['north','east','south','west'].map(k=>{const s=o.gates[k],lev=s.crowd>80?'red':s.crowd>60?'amber':'green';return `<div class="service-row"><div class="service-icon">G</div><div><b>${k[0].toUpperCase()+k.slice(1)} Gate</b><p>${s.operator} · ${s.open?'Open':'Closed'} · ${s.wait} min wait</p></div><div class="bar ${lev}"><i style="width:${s.crowd}%"></i></div><div class="service-state">${s.crowd}%</div>${actions?`<div class="mini-actions"><button class="btn sm" data-op="toggleGate" data-key="${k}">${s.open?'Close':'Open'}</button><button class="btn sm" data-op="addLine" data-key="${k}">Add line</button></div>`:''}</div>`}).join('')}</div>`}
+  function foodOpsRows(o,actions=false){return `<div class="service-list">${[['foodE','East Food Street'],['foodN','North Food Court'],['store','Fan Store']].map(([k,n])=>{const s=o.food[k],lev=s.wait>15?'red':s.wait>7?'amber':'green';return `<div class="service-row"><div class="service-icon">🍴</div><div><b>${n}</b><p>${s.operator} · ${s.open?'Open':'Closed'} · ${s.free?'Free now':'Active'}</p></div><div class="bar ${lev}"><i style="width:${clamp(s.wait*4,8,100)}%"></i></div><div class="service-state">${s.wait} min</div>${actions?`<div class="mini-actions"><button class="btn sm" data-op="freeFood" data-key="${k}">Mark free</button></div>`:''}</div>`}).join('')}</div>`}
 
-  function loginDemo(role){
-    const u=read(STORE.users,[]).find(x=>x.role===role); session={name:u.name,email:u.email,role:u.role}; write(STORE.session,session); Object.assign(state,{screen:'app',role,authRole:role,name:u.name,tab:'events'}); render();
-  }
-  function authSubmit(ev){
-    ev.preventDefault(); const fd=new FormData(ev.currentTarget); const email=(fd.get('email')||'').toString().trim().toLowerCase(); const password=(fd.get('password')||'').toString(); let users=read(STORE.users,[]);
-    if(state.authMode==='signup'){
-      if(users.some(u=>u.email===email)){ toast('Account already exists','Use sign in instead.'); return; }
-      const u={name:(fd.get('name')||'Guest').toString().trim()||'Guest',email,password,role:state.authRole}; users.push(u); write(STORE.users,users); session={name:u.name,email:u.email,role:u.role};
-    } else {
-      const u=users.find(x=>x.email===email&&x.password===password&&x.role===state.authRole); if(!u){ toast('Could not sign in','Check role, email and password. Demo password is event123.'); return; } session={name:u.name,email:u.email,role:u.role};
-    }
-    write(STORE.session,session); Object.assign(state,{screen:'app',role:session.role,name:session.name,tab:'events'}); render();
-  }
-  function ticketSubmit(ev){ ev.preventDefault(); const fd=new FormData(ev.currentTarget); const t=(fd.get('ticket')||'').toString().trim(); if(!t){ toast('Enter ticket number'); return; } state.ticket=t; write(STORE.ticket,t); toast('Pass ready','Your live event guide is now open.'); render(); }
-  function updateTask(id,status){ const tasks=read(STORE.tasks,TASKS).map(t=>t.id===id?{...t,status}:t); write(STORE.tasks,tasks); toast(`Task ${status.toLowerCase()}`,`Status updated for ${id}.`); render(); }
+  function operatorEvent(id,view='overview'){destroyMap();const e=eventBy(id),o=ops();const items=[['overview','My event'],['tasks','My tasks'],['services','Live services'],['map','Work map'],['timeline','Schedule']];app.innerHTML=`<div class="app-frame">${topApp()}<div class="event-shell">${side(e,'operator',view,items)}<main class="event-content"><div class="event-banner"><div><span class="badge ${statusOf(e)}">${statusOf(e).toUpperCase()}</span><h1>${esc(e.name)} · Operator Workspace</h1><p>See exactly what is happening, where people are moving and what your team should change.</p></div><button class="btn primary" data-view="map">Open work map</button></div>${operatorView(e,view,o)}</main></div></div>`;bindEventSide(e.id);bindOpsActions(e,'operator');if(view==='map')setTimeout(()=>initRealMap(e,'operator'),0)}
+  function operatorView(e,view,o){if(view==='overview')return `<div class="dashboard-grid"><div class="kpi"><small>North Gate</small><b>${o.gates.north.crowd}%</b><span>${o.gates.north.wait} min wait</span></div><div class="kpi"><small>P3 parking free</small><b>${o.parking.p3.total-o.parking.p3.used}</b><span>spaces</span></div><div class="kpi"><small>East food wait</small><b>${o.food.foodE.wait} min</b><span>${o.food.foodE.free?'free now':'active'}</span></div><div class="kpi"><small>Shuttle S3</small><b>${o.transport.shuttle.active?'Active':'Off'}</b><span>${o.transport.shuttle.next}</span></div></div><div class="grid2"><div class="panel"><div class="panel-head"><h3>What your team sees</h3><span>live service detail</span></div><div class="panel-body">${fullServiceSummary(o)}</div></div><div class="panel"><div class="panel-head"><h3>Latest actions</h3><span>shared live</span></div><div class="panel-body">${feedHtml(o.logs)}</div></div></div>`;
+    if(view==='tasks')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>High priority work</h3><span>step by step</span></div><div class="panel-body"><div class="live-card"><div class="live-card-head"><h4>Reduce North Gate pressure</h4><span class="badge red">HIGH</span></div><p><b>Where:</b> North Gate<br><b>Why:</b> ${o.gates.north.crowd}% crowd · ${o.gates.north.wait} min wait<br><b>Do:</b> Add one line and redirect new arrivals to East Gate.</p><div class="mini-actions"><button class="btn primary sm" data-op="addLine" data-key="north">Add entry line</button><button class="btn sm" data-view="map">Show on map</button></div></div><div class="live-card"><div class="live-card-head"><h4>Keep parking flow open</h4><span class="badge warn">MEDIUM</span></div><p><b>Where:</b> P3 / P4<br><b>Why:</b> P1 is almost full.<br><b>Do:</b> Free a lane and send vehicles to P3.</p><div class="mini-actions"><button class="btn primary sm" data-op="freeParking" data-key="p3">Free 120 spaces</button></div></div><div class="live-card"><div class="live-card-head"><h4>Reduce North Food wait</h4><span class="badge warn">MEDIUM</span></div><p><b>Where:</b> North Food Court<br><b>Do:</b> Move guests to East Food Street and mark East as free.</p><div class="mini-actions"><button class="btn primary sm" data-op="freeFood" data-key="foodE">Mark East free</button></div></div></div></div><div class="panel"><div class="panel-head"><h3>Task result appears for guests</h3><span>connected demo</span></div><div class="panel-body"><p style="font-size:10px;color:var(--muted);line-height:1.7">When you complete an action here, Attendee and Management screens in this browser update immediately. Open another tab to demo the connection.</p>${feedHtml(o.logs)}</div></div></div>`;
+    if(view==='services')return `<div class="grid2"><div class="panel"><div class="panel-head"><h3>Gates</h3><span>operate live</span></div><div class="panel-body">${gateRows(o,true)}</div></div><div class="panel"><div class="panel-head"><h3>Food & stores</h3><span>operate live</span></div><div class="panel-body">${foodOpsRows(o,true)}</div></div></div><div class="grid2" style="margin-top:12px"><div class="panel"><div class="panel-head"><h3>Parking</h3><span>spaces & lanes</span></div><div class="panel-body">${serviceRowsParking(o,true)}</div></div><div class="panel"><div class="panel-head"><h3>Transport</h3><span>deploy resources</span></div><div class="panel-body"><div class="service-list"><div class="service-row"><div class="service-icon">S</div><div><b>Shuttle S3</b><p>${o.transport.shuttle.next}</p></div><div class="bar green"><i style="width:${o.transport.shuttle.load}%"></i></div><div class="service-state">${o.transport.shuttle.load}%</div></div></div><div class="mini-actions"><button class="btn primary sm" data-op="deployShuttle">Deploy extra shuttle</button></div></div></div></div>`;
+    if(view==='map')return navigationHtml(e,o);if(view==='timeline')return `<div class="panel"><div class="panel-head"><h3>Event schedule</h3><span>where demand changes</span></div><div class="panel-body">${liveProgram(e)}</div></div>`;return ''}
 
-  setInterval(()=>{ const clock=document.getElementById('clock'); if(clock) clock.textContent=new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit',second:'2-digit'}).format(N()); },1000);
-  render();
+  function bindOpsActions(e,role){app.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{const action=b.dataset.op,k=b.dataset.key,o=ops();if(action==='toggleGate'){o.gates[k].open=!o.gates[k].open;addLocal(o,'gate',`${k[0].toUpperCase()+k.slice(1)} Gate ${o.gates[k].open?'opened':'closed'}`,`${o.gates[k].operator} changed gate status.`)}else if(action==='addLine'){o.gates[k].crowd=clamp(o.gates[k].crowd-14,15,100);o.gates[k].wait=clamp(o.gates[k].wait-6,1,40);addLocal(o,'gate',`Extra line opened at ${k[0].toUpperCase()+k.slice(1)} Gate`,`Crowd reduced to ${o.gates[k].crowd}% and wait to ${o.gates[k].wait} min.`)}else if(action==='freeParking'){o.parking[k].used=clamp(o.parking[k].used-120,0,o.parking[k].total);addLocal(o,'parking',`${k.toUpperCase()} parking capacity improved`,`120 spaces are now available for incoming vehicles.`)}else if(action==='freeFood'){o.food[k].open=true;o.food[k].free=true;o.food[k].wait=Math.max(2,o.food[k].wait-7);addLocal(o,'food',`${k==='foodE'?'East Food Street':k==='foodN'?'North Food Court':'Fan Store'} marked free`,`Guests can use this area with ${o.food[k].wait} min wait.`)}else if(action==='deployShuttle'){o.transport.shuttle.active=true;o.transport.shuttle.load=Math.max(28,o.transport.shuttle.load-12);o.transport.shuttle.next='Extra shuttle in 3 min';addLocal(o,'transport','Extra shuttle deployed','Attendees can now use Shuttle S3 in about 3 min.')}write(K.ops,o);toast('Live operation updated','Attendee and Management views will show this change.');openEvent(e.id,document.querySelector('.side-nav button.active')?.dataset.view||'overview')});}
+  function addLocal(o,type,title,detail){o.logs.unshift({ts:Date.now(),type,title,detail});o.logs=o.logs.slice(0,18)}
+
+  bc?.addEventListener('message',ev=>{if(ev.data?.k===K.ops&&session()){const active=app.querySelector('.side-nav button.active')?.dataset.view;if(active){const eid=document.querySelector('.event-side h2')?.textContent;/* visual updates happen on next interaction; toasts keep it non-disruptive */toast('Live event update received','Another EventFlow view changed an operation.')}}});
+  window.addEventListener('storage',ev=>{if(ev.key===K.ops&&session())toast('Live event update received','An operator changed the event status.')});
+
+  // Small live simulation: only numbers, no fake claims of real external data.
+  setInterval(()=>{const o=ops();if(!o) return;const wiggle=()=>Math.round(Math.random()*4-2);o.gates.north.crowd=clamp(o.gates.north.crowd+wiggle(),70,98);o.gates.east.crowd=clamp(o.gates.east.crowd+wiggle(),28,68);o.food.foodN.wait=clamp(o.food.foodN.wait+(Math.random()>.5?1:-1),8,28);o.transport.metro.load=clamp(o.transport.metro.load+wiggle(),35,85);localStorage.setItem(K.ops,JSON.stringify(o));},7000);
+
+  if(session()) eventHub(); else landing();
 })();

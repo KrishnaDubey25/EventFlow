@@ -3,14 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#07111f" />
-  <meta name="description" content="EventFlow — end-to-end live event operations and guest guidance." />
+  <meta name="theme-color" content="#070b16" />
+  <meta name="description" content="EventFlow — live event operations, guest guidance and crowd-aware navigation." />
   <title>EventFlow — Live Event Operating System</title>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="app"></div>
   <div id="toast" class="toast-host" aria-live="polite"></div>
+  <script src="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

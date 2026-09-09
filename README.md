@@ -1,38 +1,29 @@
-# EventFlow — True Rebuild
+# EventFlow LiveOps RealMap
 
-A fully local, single-page EventFlow demo with three roles:
+A static, no-database hackathon demo of an end-to-end event operating system.
 
-- Attendee
-- Operator
-- Event Management
-
-## What changed in this rebuild
-
-- Completely new UI and page structure.
-- Landing page has no map.
-- Sign in opens an event hub first.
-- Live / Upcoming / Completed event list uses real browser time.
-- Attendee: event -> ticket -> live activity -> destination -> turn-by-turn navigation.
-- Navigation is a built-in 3D-style road cockpit with next turn, ETA, crowded route, safer gate and event service points.
-- Management: control room with live program, crowd, travel, food, stay, parking and team jobs.
-- Operator: detailed work with where, why, by when, route, resources and steps.
-- No database, no API key, no environment variables.
-- Works from a normal static deployment.
+## What is new
+- Premium landing page with no map.
+- Sign in -> main event list with Live / Upcoming / Completed filters.
+- Attendee ticket -> live program -> food/parking/stay/transport -> real road navigation.
+- MapLibre + OpenFreeMap/OpenStreetMap real vector map (no Google Maps key).
+- OSRM road routing with turn steps and alternatives when the public service is reachable.
+- Live gate crowd overlays, parking markers, food/status markers, medical, transit, hotel.
+- Operator can open/close gates, add lines, free parking, mark food free and deploy shuttles.
+- LocalStorage + BroadcastChannel syncs those demo operations across tabs in the same browser.
 
 ## Demo accounts
+- attendee@eventflow.demo / event123
+- operator@eventflow.demo / event123
+- manager@eventflow.demo / event123
 
-Password for all demo accounts: `event123`
-
-- Attendee: `attendee@eventflow.demo`
-- Operator: `operator@eventflow.demo`
-- Management: `manager@eventflow.demo`
-
-## Run
-
-You can open `index.html` directly, or run:
-
+## Run locally
 ```bash
 python3 -m http.server 8080
 ```
+Open http://localhost:8080
 
-Then open `http://localhost:8080`.
+## Notes
+- External road map tiles and road routing require an internet connection in the browser.
+- Crowd/operations values are demo simulation data, not real-world telemetry.
+- Browser geolocation requires the user's permission and works on HTTPS (Vercel) or localhost.
