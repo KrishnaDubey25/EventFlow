@@ -1,59 +1,73 @@
-# EventFlow — Free Maps + Live GPS Crowd Routing
+# EventFlow — Premium Local Demo
 
-This build removes Google Maps and all Google Maps API key requirements.
+A full browser-based hackathon demo with three separate roles:
 
-## Stack
+- Event Management
+- Operator
+- Attendee
 
-- **MapLibre GL JS** — interactive browser map, no Google key.
-- **OpenStreetMap raster tiles** — road/base geography.
-- **Browser Geolocation API** — attendee live GPS after explicit permission.
-- **Supabase** — authentication + latest attendee GPS rows + aggregate crowd RPC.
-- **Public OSRM demo router** — key-free road route and alternative-route demo.
-- **EventFlow crowd logic** — combines gate pressure with opted-in GPS density and recommends a lower-pressure gate.
+## What this version includes
 
-## Important privacy behavior
+- Premium white / soft-blue visual system
+- Very simple English across the UI
+- Landing page that explains EventFlow before login
+- Local Sign Up / Sign In using browser localStorage
+- Three role-based dashboards
+- Attendee ticket photo upload or ticket number flow
+- Personal seat, best gate and route demo
+- 3D-style stadium digital twin with crowd colors
+- Live demo crowd changes
+- Management actions that create operator tasks
+- Operator task status that is saved locally
+- Attendee messages that change after management/operator actions
+- Parking, travel, hotel/stay, event timeline, alerts and reports
+- Responsive desktop / tablet / mobile UI
+- No database
+- No API key
+- No environment variables
 
-Attendee GPS is collected only after the attendee taps **Share live GPS** and the browser grants permission. Raw attendee locations are protected by RLS. The organizer map reads only rounded, short-lived aggregate cells through `get_crowd_cells()`.
+## Run
 
-## Supabase setup
+The easiest way:
 
-1. Open your Supabase project.
-2. Go to **SQL Editor**.
-3. Run all of `supabase-schema.sql` once.
-4. For real cross-device GPS, create/sign in with an attendee account before sharing location.
+1. Open the folder.
+2. Double-click `index.html`.
 
-Your supplied Supabase project URL + publishable key are already in `config.js`.
-
-Never put a `service_role` key, JWT secret, or database password in this frontend.
-
-## Run locally
-
-Because browser geolocation requires a secure context, use localhost rather than opening the file directly:
+For a local server on macOS:
 
 ```bash
-cd EventFlow-FreeMaps-GPS
+cd EventFlow-Reimagined
 python3 -m http.server 8080
 ```
 
-Open `http://localhost:8080` on the same computer.
+Then open:
 
-For a phone GPS demo, deploy the folder to an HTTPS host (for example Vercel/Netlify/GitHub Pages) and scan the organizer's **Check-in QR** from the phone. Modern mobile browsers require HTTPS for geolocation.
+`http://localhost:8080`
 
-## Demo flow
+## Demo accounts
 
-1. Organizer → Live Map → **Check-in QR**.
-2. Attendee scans QR on phone.
-3. Attendee signs in/registers with Supabase if needed.
-4. Tap **Share live GPS** and allow location permission.
-5. Organizer sees aggregate live crowd circles on the MapLibre/OpenStreetMap map.
-6. Trigger **Crowd Surge** or gather multiple GPS signals near a gate.
-7. Attendee taps **Find alternate route**.
-8. EventFlow scores gates using crowd pressure + distance, selects a lower-pressure gate, then requests up to 3 road alternatives from the key-free OSRM demo router.
+All demo passwords are:
 
-## No paid map key
+`event123`
 
-There is no `GOOGLE_MAPS_API_KEY` and no Google Maps dependency in this build.
+- Management: `manager@eventflow.demo`
+- Operator: `operator@eventflow.demo`
+- Attendee: `attendee@eventflow.demo`
 
-### Demo-service note
+You can also create your own local account.
 
-The standard OpenStreetMap tile server and public OSRM router are community/demo infrastructure, not production SLA services. They are appropriate for a hackathon demo with light traffic. For a production deployment, self-host tiles/routing or use a provider that gives you an SLA and usage allowance.
+## Best demo story
+
+1. Open Management.
+2. Click **Run crowd surge demo**.
+3. North Gate becomes very busy.
+4. Open **Smart Actions** and approve the East Gate move.
+5. Sign out and open Operator.
+6. Open **My Tasks**, accept/start/finish a new task.
+7. Sign out and open Attendee.
+8. Add a ticket photo or ticket number.
+9. EventFlow shows the best gate, seat path, gate crowd and event journey.
+
+## Important
+
+This is intentionally a local demo. It does not claim to show real GPS crowd data across different phones. Cross-device GPS/crowd sharing would need a backend later.
