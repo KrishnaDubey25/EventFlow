@@ -1,29 +1,41 @@
-# EventFlow LiveOps RealMap
+# EventFlow — White Premium Rebuild
 
-A static, no-database hackathon demo of an end-to-end event operating system.
+A fresh EventFlow demo rebuild focused on a clean white premium UI (no blue), simple English, clear navigation, detailed parking/food/stay flows, operator missions and management control.
 
-## What is new
-- Premium landing page with no map.
-- Sign in -> main event list with Live / Upcoming / Completed filters.
-- Attendee ticket -> live program -> food/parking/stay/transport -> real road navigation.
-- MapLibre + OpenFreeMap/OpenStreetMap real vector map (no Google Maps key).
-- OSRM road routing with turn steps and alternatives when the public service is reachable.
-- Live gate crowd overlays, parking markers, food/status markers, medical, transit, hotel.
-- Operator can open/close gates, add lines, free parking, mark food free and deploy shuttles.
-- LocalStorage + BroadcastChannel syncs those demo operations across tabs in the same browser.
+## Run
 
-## Demo accounts
-- attendee@eventflow.demo / event123
-- operator@eventflow.demo / event123
-- manager@eventflow.demo / event123
+Open `index.html` directly, or preferably:
 
-## Run locally
 ```bash
 python3 -m http.server 8080
 ```
-Open http://localhost:8080
 
-## Notes
-- External road map tiles and road routing require an internet connection in the browser.
-- Crowd/operations values are demo simulation data, not real-world telemetry.
-- Browser geolocation requires the user's permission and works on HTTPS (Vercel) or localhost.
+Then open `http://localhost:8080`.
+
+## Demo accounts
+
+Use **Use demo account** after selecting a role.
+
+- Attendee
+- Operator
+- Management
+
+No database or API key is required. Accounts and live demo state use browser localStorage. Operator changes sync across tabs with BroadcastChannel where supported.
+
+## Map
+
+The navigation screen uses MapLibre + OpenFreeMap for the road map and tries OSRM public routing for route geometry/turn steps. If map tiles or routing are blocked, the route instructions and event status panels still remain usable.
+
+## Main improvements
+
+- White premium theme with coral, violet and green accents; no blue UI theme.
+- Landing page has no map.
+- Sign in -> event list -> Live / Upcoming / Completed -> event-specific flow.
+- Attendee ticket -> live schedule -> choose destination -> navigation.
+- Specific food stalls with wait time and Go There buttons.
+- Car/bike parking with free-space counts and road restrictions.
+- Stay/hotel cards with price, rooms, shuttle and demo contact numbers.
+- Operator tasks for gate, cleaning, parking, lighting and health issues.
+- Operator service controls update guest/management status locally.
+- Management control room with guests, gates, food, parking, travel, stay, teams and jobs.
+- Navigation shows turn card, ETA, distance, route steps, crowd status and nearby live services.

@@ -1,20 +1,164 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#070b16" />
-  <meta name="description" content="EventFlow — live event operations, guest guidance and crowd-aware navigation." />
-  <title>EventFlow — Live Event Operating System</title>
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fffaf7" />
+  <title>EventFlow — Live Event Guidance & Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="app"></div>
-  <div id="toast" class="toast-host" aria-live="polite"></div>
-  <script src="https://unpkg.com/maplibre-gl@5.12.0/dist/maplibre-gl.js"></script>
+
+  <template id="landing-template">
+    <main class="landing-shell">
+      <header class="site-header container">
+        <a class="brand" href="#" aria-label="EventFlow home">
+          <span class="brand-mark">EF</span>
+          <span>
+            <strong>EventFlow</strong>
+            <small>Live event guidance & operations</small>
+          </span>
+        </a>
+        <nav class="landing-nav" aria-label="Main navigation">
+          <a href="#how">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#events">Live events</a>
+        </nav>
+        <div class="header-actions">
+          <button class="btn ghost" data-action="open-login">Sign in</button>
+          <button class="btn dark" data-action="open-register">Create account</button>
+        </div>
+      </header>
+
+      <section class="hero container">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="live-dot"></span> One place to understand the whole event</div>
+          <h1>Know what is happening. Know where to go. Keep the event moving.</h1>
+          <p>EventFlow helps guests, operators and event teams see live schedules, open gates, parking, food, travel, stays, crowd pressure and the next best action — in simple English.</p>
+          <div class="hero-actions">
+            <button class="btn accent" data-action="open-register">Start with EventFlow</button>
+            <button class="btn soft" data-action="scroll-events">View live events</button>
+          </div>
+          <div class="hero-proof">
+            <div><strong>3 roles</strong><span>Guest • Operator • Management</span></div>
+            <div><strong>Live journey</strong><span>Arrival to exit</span></div>
+            <div><strong>Clear guidance</strong><span>No confusing screens</span></div>
+          </div>
+        </div>
+        <div class="hero-visual" aria-label="Animated event operations overview">
+          <div class="orb orb-a"></div><div class="orb orb-b"></div>
+          <div class="visual-panel main-card">
+            <div class="visual-topline"><span>EVENT LIVE</span><strong>94%</strong></div>
+            <h3>Everything is connected</h3>
+            <div class="flow-row">
+              <div class="flow-node"><span>01</span><b>Arrive</b><small>Best time & travel</small></div>
+              <div class="flow-line"></div>
+              <div class="flow-node active"><span>02</span><b>Enter</b><small>Best gate</small></div>
+              <div class="flow-line"></div>
+              <div class="flow-node"><span>03</span><b>Enjoy</b><small>Food, seat, help</small></div>
+              <div class="flow-line"></div>
+              <div class="flow-node"><span>04</span><b>Leave</b><small>Exit & transport</small></div>
+            </div>
+            <div class="mini-grid">
+              <article><span class="status success">OPEN</span><b>East Gate</b><small>4 min wait</small></article>
+              <article><span class="status warning">BUSY</span><b>North Gate</b><small>18 min wait</small></article>
+              <article><span class="status success">FREE</span><b>P1 Parking</b><small>1,015 spaces</small></article>
+              <article><span class="status success">FREE NOW</span><b>East Food</b><small>4 min wait</small></article>
+            </div>
+          </div>
+          <div class="floating-note note-a"><span>Operator update</span><b>Extra entry line opened</b></div>
+          <div class="floating-note note-b"><span>Guest route</span><b>Use East Gate</b></div>
+        </div>
+      </section>
+
+      <section id="how" class="section container">
+        <div class="section-heading"><span>HOW IT WORKS</span><h2>Simple for guests. Detailed for teams.</h2><p>EventFlow changes what each person sees, but keeps everyone connected to the same live event.</p></div>
+        <div class="role-story-grid">
+          <article class="role-story coral"><div class="role-icon">A</div><h3>Attendee</h3><p>See your event, ticket, live activity, best gate, parking, food, stay and step-by-step directions.</p><ul><li>What is live now</li><li>Where should I go?</li><li>How do I get there?</li></ul></article>
+          <article class="role-story violet"><div class="role-icon">O</div><h3>Operator</h3><p>See exactly what management needs you to do, where to go and what changed around your work area.</p><ul><li>Cleaning & service issues</li><li>Gate, food, parking tasks</li><li>Live work status</li></ul></article>
+          <article class="role-story green"><div class="role-icon">M</div><h3>Management</h3><p>See the complete event: guests, gates, food, parking, stay, travel, teams, live tasks and crowd movement.</p><ul><li>Live control room</li><li>Upcoming & completed events</li><li>Assign and track work</li></ul></article>
+        </div>
+      </section>
+
+      <section id="features" class="section soft-section">
+        <div class="container">
+          <div class="section-heading"><span>CORE FEATURES</span><h2>More than a route finder.</h2><p>Navigation is only one part. EventFlow manages the complete guest and operations journey.</p></div>
+          <div class="feature-grid">
+            <article><span class="feature-no">01</span><h3>Live event timeline</h3><p>See what is live, what starts next and what is already complete.</p></article>
+            <article><span class="feature-no">02</span><h3>Smart guest journey</h3><p>Ticket to entry, seat, food, help, stay and exit — one connected flow.</p></article>
+            <article><span class="feature-no">03</span><h3>Live service status</h3><p>Open gates, free parking, food wait, medical help and transport updates.</p></article>
+            <article><span class="feature-no">04</span><h3>Clear navigation</h3><p>Step-by-step route, next turn, ETA and safer gate when an area is busy.</p></article>
+            <article><span class="feature-no">05</span><h3>Operator missions</h3><p>Management tasks become clear work cards with where, why, deadline and instructions.</p></article>
+            <article><span class="feature-no">06</span><h3>Event control room</h3><p>One place to monitor people, services, transport, stays, teams and risks.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="events" class="section container">
+        <div class="section-heading split"><div><span>LIVE & UPCOMING</span><h2>Choose an event and explore the demo.</h2></div><button class="btn dark" data-action="open-login">Sign in to continue</button></div>
+        <div id="landing-events" class="event-card-grid"></div>
+      </section>
+
+      <footer class="site-footer container"><div class="brand compact"><span class="brand-mark">EF</span><strong>EventFlow</strong></div><p>Built for clear, connected event experiences.</p><span>Demo data • Local browser mode</span></footer>
+    </main>
+  </template>
+
+  <template id="auth-template">
+    <div class="auth-page">
+      <button class="back-link" data-action="back-home">← Back to home</button>
+      <div class="auth-shell">
+        <section class="auth-story">
+          <div class="brand"><span class="brand-mark">EF</span><span><strong>EventFlow</strong><small>One event. One connected view.</small></span></div>
+          <h1 id="auth-title">Welcome back.</h1>
+          <p id="auth-subtitle">Sign in and continue to your event space.</p>
+          <div class="auth-benefits"><div><b>Simple English</b><span>Easy to understand</span></div><div><b>Role-based</b><span>Only what you need</span></div><div><b>Local demo</b><span>No database needed</span></div></div>
+        </section>
+        <section class="auth-card">
+          <div class="role-picker" id="role-picker"></div>
+          <form id="auth-form">
+            <label>Full name<input id="name-field" name="name" type="text" placeholder="Your name" /></label>
+            <label>Email<input id="email-field" name="email" type="email" placeholder="you@example.com" required /></label>
+            <label>Password<input id="password-field" name="password" type="password" placeholder="Minimum 4 characters" required /></label>
+            <button class="btn accent wide" type="submit" id="auth-submit">Sign in</button>
+          </form>
+          <div class="auth-divider"><span></span><em>or</em><span></span></div>
+          <button class="btn soft wide" data-action="demo-login">Use demo account</button>
+          <p class="auth-switch" id="auth-switch-copy"></p>
+          <div class="auth-message" id="auth-message" role="status"></div>
+        </section>
+      </div>
+    </div>
+  </template>
+
+  <template id="shell-template">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <button class="brand sidebar-brand" data-action="go-home-hub"><span class="brand-mark">EF</span><span><strong>EventFlow</strong><small id="sidebar-role">Attendee</small></span></button>
+          <div id="sidebar-nav" class="sidebar-nav"></div>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="profile-card"><div class="avatar" id="profile-avatar">KD</div><div><strong id="profile-name">Demo User</strong><small id="profile-email">demo@eventflow.app</small></div></div>
+          <button class="btn ghost wide" data-action="logout">Sign out</button>
+        </div>
+      </aside>
+      <main class="app-main">
+        <header class="app-header">
+          <div><span class="page-kicker" id="page-kicker">EVENTFLOW</span><h1 id="page-title">Events</h1></div>
+          <div class="header-tools"><div class="clock" id="live-clock"></div><button class="icon-btn" data-action="show-notifications" aria-label="Notifications">🔔<span id="notification-count">3</span></button></div>
+        </header>
+        <div id="view-root" class="view-root"></div>
+      </main>
+    </div>
+  </template>
+
+  <div id="modal-root"></div>
+  <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
