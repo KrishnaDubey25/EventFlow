@@ -5,9 +5,9 @@
   const toastHost = document.getElementById('toastHost');
 
   const STORE = {
-    users: 'eventflow_users_v4',
-    session: 'eventflow_session_v4',
-    shared: 'eventflow_shared_v4'
+    users: 'eventflow_users_v5',
+    session: 'eventflow_session_v5',
+    shared: 'eventflow_shared_v5'
   };
 
   const now = new Date();
@@ -986,6 +986,282 @@
         saveShared();
       }
     },6000);
+  }
+
+
+  /* ===== Visual Premium Rebuild Overrides ===== */
+  const eventCatalog = [
+    {id:'EVF-CRICKET-01',title:'India vs Pakistan',type:'Cricket',venue:'Unity Cricket Stadium',city:'Mumbai',time:'7:00 PM',status:'Live',accent:'#5368ff',assigned:true,crowd:'High',people:'58,420'},
+    {id:'EVF-MUSIC-02',title:'City Music Night',type:'Concert',venue:'Harbour Arena',city:'Mumbai',time:'8:30 PM',status:'Live',accent:'#8a5fff',assigned:true,crowd:'Medium',people:'21,600'},
+    {id:'EVF-TECH-03',title:'Future Tech Expo',type:'Expo',venue:'Metro Convention Centre',city:'Mumbai',time:'5:00 PM',status:'Live',accent:'#21b7ac',assigned:true,crowd:'Low',people:'12,480'},
+    {id:'EVF-FEST-04',title:'City Food Festival',type:'Festival',venue:'Riverfront Grounds',city:'Mumbai',time:'6:00 PM',status:'Live',accent:'#dd8c2c',assigned:false,crowd:'Medium',people:'18,950'}
+  ];
+
+  state.selectedEventId = state.selectedEventId || 'EVF-CRICKET-01';
+  state.attendeeTarget = state.attendeeTarget || 'seat';
+
+  function selectedEvent(){ return eventCatalog.find(e=>e.id===state.selectedEventId) || eventCatalog[0]; }
+
+  function renderLanding() {
+    app.innerHTML = `
+      <div class="app-shell">
+        <header class="top-nav">
+          <div class="container nav-inner">
+            ${brandHTML()}
+            <nav class="nav-links" aria-label="Main navigation">
+              <a href="#experience">How it works</a>
+              <a href="#map">Event map</a>
+              <a href="#roles">Three views</a>
+            </nav>
+            <div class="nav-actions">
+              <button class="btn btn-secondary" data-go-auth="signin">Sign in</button>
+              <button class="btn btn-primary" data-go-auth="signup">Create account</button>
+            </div>
+          </div>
+        </header>
+        <main>
+          <section class="hero">
+            <div class="container hero-grid">
+              <div>
+                <span class="pill pill-live">LIVE EVENT FLOW</span>
+                <h1>One event.<br><span>One clear way.</span></h1>
+                <p>EventFlow helps a visitor know where to go, helps an operator know what to do, and helps management see what needs attention — without a confusing dashboard.</p>
+                <div class="hero-actions">
+                  <button class="btn btn-primary" data-go-auth="signup">Create account</button>
+                  <button class="btn btn-secondary" data-demo-role="attendee">Try attendee view</button>
+                </div>
+                <div class="hero-meta">
+                  <span><strong>Attendee</strong><br>Ticket → gate → seat</span>
+                  <span><strong>Operator</strong><br>Event → task → location</span>
+                  <span><strong>Management</strong><br>See → decide → assign</span>
+                </div>
+              </div>
+              <div class="hero-visual">
+                <div class="hero-card">
+                  <div class="hero-card-top">
+                    <div><div class="hero-card-title">EventFlow Live View</div><small>${shortDate} · Unity Cricket Stadium</small></div>
+                    <span class="pill pill-live">LIVE</span>
+                  </div>
+                  <div class="mini-kpis">
+                    <div class="mini-kpi"><strong>East Gate</strong><span>Best entry now</span></div>
+                    <div class="mini-kpi"><strong>8 min</strong><span>Current wait</span></div>
+                    <div class="mini-kpi"><strong>4:00 → 10:45</strong><span>Full event flow</span></div>
+                  </div>
+                  <div class="visual-world">
+                    <div class="world-road r1"></div><div class="world-road r2"></div><div class="world-road r3"></div>
+                    <div class="world-stadium"></div>
+                    <div class="world-node node-hotel"><b>Stay</b>42 rooms ready</div>
+                    <div class="world-node node-metro"><b>Metro East</b>11 min to venue</div>
+                    <div class="world-node node-parking"><b>Parking P3</b>52% space left</div>
+                    <div class="world-node node-help"><b>Help Point</b>Medical + support</div>
+                    <div class="world-gate wg-n busy">North · Busy</div>
+                    <div class="world-gate wg-e">East · Best</div>
+                    <div class="world-gate wg-s">South</div>
+                    <div class="world-gate wg-w">West</div>
+                    <div class="flow-dot fd1"></div><div class="flow-dot fd2"></div><div class="flow-dot fd3"></div>
+                    <div class="world-callout"><strong>Go to East Gate</strong>Less crowd · closer to Block C</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-tight" id="experience">
+            <div class="container">
+              <span class="eyebrow">WHAT EVENTFLOW DOES</span>
+              <h2 class="section-title" style="font-size:clamp(34px,4.7vw,54px)">It turns a large event into simple next steps.</h2>
+              <p class="section-sub">A new visitor should not need to understand crowd systems or event operations. EventFlow only shows what matters now.</p>
+              <div class="visual-explain-grid">
+                <article class="visual-story">
+                  <span class="pill" style="background:rgba(255,255,255,.08);color:#c7d2ff">A visitor journey</span>
+                  <h3>From ticket to seat.</h3>
+                  <p>Add a ticket photo. EventFlow reads the demo ticket details locally and opens a simple event pass with the best way to move.</p>
+                  <div class="story-steps">
+                    <div class="story-step"><i>1</i><div><b>Add ticket</b><br><small>Photo or ticket number</small></div></div>
+                    <div class="story-step"><i>2</i><div><b>Choose what you need</b><br><small>Seat, food, washroom, help, exit, parking or stay</small></div></div>
+                    <div class="story-step"><i>3</i><div><b>Follow one clear route</b><br><small>Best gate + easy direction + current crowd</small></div></div>
+                  </div>
+                </article>
+                <article class="event-map-showcase" id="map">
+                  <div class="map-stage">
+                    <div class="map-road a"></div><div class="map-road b"></div><div class="map-road c"></div>
+                    <div class="map-place mp-hotel"><b>Partner Stay</b>Shuttle ready</div>
+                    <div class="map-place mp-metro"><b>Metro East</b>Best public travel</div>
+                    <div class="map-place mp-parking"><b>Parking P3</b>More space</div>
+                    <div class="map-place mp-medical"><b>Help Point</b>Medical + support</div>
+                    <div class="map-stadium-simple"></div>
+                    <div class="map-bubble mb-n red">● North · 91%</div>
+                    <div class="map-bubble mb-e green">● East · 43%</div>
+                    <div class="map-bubble mb-s amber">● South · 67%</div>
+                    <div class="map-bubble mb-w amber">● West · 78%</div>
+                  </div>
+                  <div class="map-legend"><span class="legend-pill">Green = easier</span><span class="legend-pill">Red = busy</span><span class="legend-pill">Map stays simple</span><span class="legend-pill">Tap a place to get directions</span></div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-dark section" id="roles">
+            <div class="container">
+              <span class="eyebrow">THREE VIEWS</span>
+              <h2 class="section-title">The same event, shown differently for each person.</h2>
+              <p class="section-sub">No one gets a screen full of things they do not need.</p>
+              <div class="role-grid">
+                ${roleLandingCard('01','Attendee','Know where to go','Add a ticket and get your pass, best gate, destination route, travel help, stay and event time.','attendee')}
+                ${roleLandingCard('02','Operator','Know what to do','See your live events first. Open an event, then see the task, exact area and clear steps.','operator')}
+                ${roleLandingCard('03','Management','See what needs action','Watch the event, see crowd and resources, then send a clear task to the right operator.','management')}
+              </div>
+            </div>
+          </section>
+
+          <section class="section-tight">
+            <div class="container">
+              <span class="eyebrow">LIVE EVENTS</span>
+              <h2 class="section-title" style="font-size:clamp(32px,4.5vw,50px)">One platform can follow many events.</h2>
+              <div class="event-hub-grid">
+                ${eventCatalog.map(e=>`<article class="event-hub-card" style="--event-accent:${e.accent}"><small>${e.type} · ${e.city}</small><h3>${e.title}</h3><p>${e.venue}<br>${e.time} · ${e.people} guests</p><div class="live-dot-line">LIVE NOW</div></article>`).join('')}
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="container" style="text-align:center">
+              <span class="eyebrow">START HERE</span>
+              <h2 class="section-title">Open the view you need.</h2>
+              <p class="section-sub" style="margin:0 auto 24px">Sign up works locally in your browser. No database or API key is needed for this demo.</p>
+              <button class="btn btn-primary" data-go-auth="signup">Create account</button>
+            </div>
+          </section>
+        </main>
+      </div>`;
+    bindLanding();
+  }
+
+  function commandCenter(){
+    const g=state.shared.gates;
+    return `${pageHead('Event Management','See what needs action now.','The main screen stays simple: event, crowd, team work and the next decision.', `<button class="btn btn-primary" id="crowdSurgeBtn">Run crowd demo</button>`)}
+      <div class="event-hub-grid">${eventCatalog.map(e=>`<button class="event-hub-card ${state.selectedEventId===e.id?'active':''}" data-event-select="${e.id}" style="--event-accent:${e.accent}"><small>${e.type} · ${e.status}</small><h3>${e.title}</h3><p>${e.venue}<br>${e.crowd} crowd</p><div class="live-dot-line">${e.assigned?'MANAGED EVENT':'PARTNER EVENT'}</div></button>`).join('')}</div>
+      <div class="operator-focus">
+        <section class="panel"><div class="panel-head"><div><h3>${selectedEvent().title}</h3><p>${selectedEvent().venue} · Live event view</p></div><button class="btn btn-secondary btn-small" data-jump="stadium">Open event map</button></div>${stadiumMapHTML('management')}</section>
+        <div style="display:grid;gap:18px">
+          <section class="panel"><div class="panel-head"><div><h3>What needs action</h3><p>Only the next useful decisions.</p></div></div>${actionMiniHTML()}</section>
+          <section class="panel"><div class="panel-head"><div><h3>Team work</h3><p>Tasks already sent to operators.</p></div><button class="btn btn-soft btn-small" data-jump="actions">View actions</button></div>${taskListHTML(3,true)}</section>
+        </div>
+      </div>
+      <div class="map-phase-bar"><div class="phase"><strong>4:00 PM</strong>Gates open</div><div class="phase active"><strong>6:20 PM</strong>Arrival peak</div><div class="phase"><strong>7:00 PM</strong>Match starts</div><div class="phase"><strong>10:45 PM</strong>Exit flow</div></div>`;
+  }
+
+  function operatorOverview(){
+    const e=selectedEvent();
+    const pending=state.shared.tasks.filter(t=>t.status!=='Done').length;
+    return `${pageHead('Operator','Choose an event, then do the next task.','You first see live events. Open one event to see your work, location and clear steps.', `<button class="btn btn-primary" data-jump="tasks">Open my tasks</button>`)}
+      <div class="event-hub-grid">
+        ${eventCatalog.map(ev=>`<button class="event-hub-card ${state.selectedEventId===ev.id?'active':''}" data-event-select="${ev.id}" style="--event-accent:${ev.accent}"><small>${ev.type} · ${ev.city}</small><h3>${ev.title}</h3><p>${ev.venue}<br>${ev.time} · ${ev.people} guests</p><div class="live-dot-line">${ev.assigned?'ASSIGNED TO YOUR TEAM':'PARTNER EVENT'}</div></button>`).join('')}
+      </div>
+      <div class="operator-focus">
+        <section class="panel">
+          <div class="panel-head"><div><h3>${e.title}</h3><p>${e.venue} · ${e.status} now</p></div><span class="pill pill-live">${e.crowd} crowd</span></div>
+          <div class="operator-mini-map"><div class="om-route"></div><div class="om-stadium">STADIUM</div><div class="om-node om-east"><b>East Gate</b><br>Task area</div><div class="om-node om-p3"><b>Parking P3</b><br>Shuttle start</div><div class="om-node om-hotel"><b>Vista Stay</b><br>Hotel partner</div><div class="om-node om-shuttle"><b>Shuttle Point</b><br>Pickup</div></div>
+        </section>
+        <section class="panel"><div class="panel-head"><div><h3>Next work</h3><p>${pending} open tasks · most important first</p></div></div>${state.shared.tasks.slice(0,2).map(t=>taskCardHTML(t,false)).join('')}</section>
+      </div>`;
+  }
+
+  function taskCardHTML(t,management){
+    const statusClass=t.priority==='High'?'sev-high':'sev-med';
+    const lower=(t.title+' '+t.detail).toLowerCase();
+    const place=lower.includes('hotel')||lower.includes('room')?'Vista Stay':lower.includes('parking')?'Parking P3':lower.includes('shuttle')?'Parking P3 → East Gate':'East Gate';
+    const action=lower.includes('hotel')||lower.includes('room')?'Keep the rooms blocked for event guests.':lower.includes('shuttle')?'Move the assigned shuttle buses to East Gate.':lower.includes('entry')?'Open the extra entry lines and keep the lane clear.':'Go to the area and follow the event team note.';
+    const time=t.priority==='High'?'Within 10 min':'Before 6:45 PM';
+    return `<div class="task-detail-card"><div class="task-card-top"><div><h4>${t.title}</h4><p>${t.detail}</p></div><span class="severity ${statusClass}">${t.priority.toUpperCase()}</span></div><div class="task-guide"><div><b>WHERE</b><span>${place}</span></div><div><b>WHAT TO DO</b><span>${action}</span></div><div><b>BY WHEN</b><span>${time}</span></div></div><div class="task-route"><i>→</i><div><b style="font-size:11px">Route / work area</b><br><span style="font-size:10px;color:var(--muted)">${place}. Open Travel Work for the wider event movement view.</span></div></div><div class="task-meta"><span class="meta-chip">${t.owner}</span><span class="meta-chip">Status: ${t.status}</span></div>${management?'':`<div class="task-actions">${taskButtons(t)}</div>`}</div>`;
+  }
+
+  function attendeeJourney(){
+    if(!state.ticketVerified){
+      return `${pageHead('Attendee','Add your ticket to start.','A ticket photo or ticket number opens your simple event pass and route.')}
+        <div class="ticket-entry-wrap">
+          <section class="panel">${ticketFormHTML()}</section>
+          <section class="ticket-stage"><span class="pill" style="background:rgba(255,255,255,.08);color:#c7d2ff">WHAT YOU GET</span><h2>Your event becomes easy to follow.</h2><p>After the ticket is added, choose what you need. EventFlow shows one clear path instead of a busy map.</p><div class="ticket-demo-card"><div><small>Sample event pass</small><b>India vs Pakistan</b><small>East Gate · Block C12 · Row 14</small></div><div class="ticket-demo-qr"></div></div></section>
+        </div>`;
+    }
+    const t=state.ticket;
+    const targetLabels={seat:`Block ${t.block}`,food:'Food Zone A',washroom:'Washroom 3',medical:'Medical Help',exit:'East Exit',parking:'Parking P3',stay:'Vista Stay'};
+    const label=targetLabels[state.attendeeTarget]||targetLabels.seat;
+    return `${pageHead('My Event Pass','Everything you need, in one simple view.',state.shared.attendeeNotice, `<button class="btn btn-secondary" id="changeTicket">Change ticket</button>`)}
+      <section class="pass-card"><div class="pass-top"><div><small>${demoEvent.name}</small><h2>${demoEvent.match}</h2><small>${demoEvent.venue} · ${shortDate}</small></div><span class="pass-badge">TICKET READY</span></div><div class="pass-grid"><div><b>${t.gate} Gate</b><span>Best entry</span></div><div><b>${state.shared.gates[t.gate].wait} min</b><span>Gate wait</span></div><div><b>Block ${t.block}</b><span>Your block</span></div><div><b>${t.seat}</b><span>Your seat</span></div></div></section>
+      <div class="destinations"><button class="dest-btn ${state.attendeeTarget==='seat'?'active':''}" data-destination="seat">My Seat</button><button class="dest-btn ${state.attendeeTarget==='food'?'active':''}" data-destination="food">Food</button><button class="dest-btn ${state.attendeeTarget==='washroom'?'active':''}" data-destination="washroom">Washroom</button><button class="dest-btn ${state.attendeeTarget==='medical'?'active':''}" data-destination="medical">Medical Help</button><button class="dest-btn ${state.attendeeTarget==='exit'?'active':''}" data-destination="exit">Exit</button><button class="dest-btn ${state.attendeeTarget==='parking'?'active':''}" data-destination="parking">Parking</button><button class="dest-btn ${state.attendeeTarget==='stay'?'active':''}" data-destination="stay">Stay</button></div>
+      <div class="grid-2">
+        <section class="panel"><div class="panel-head"><div><h3>Go to ${label}</h3><p>Blue line is your suggested way. Red gate is crowded; green gate is easier.</p></div></div>${stadiumMapHTML('attendee')}</section>
+        <div style="display:grid;gap:18px"><section class="panel"><div class="panel-head"><div><h3>Do this now</h3><p>Only the steps you need.</p></div></div>${personalJourneyTimeline()}</section><section class="panel"><div class="panel-head"><div><h3>Today</h3><p>Your main event times.</p></div></div><div class="map-phase-bar"><div class="phase"><strong>4:00</strong>Gates open</div><div class="phase active"><strong>Now</strong>Enter</div><div class="phase"><strong>7:00</strong>Match</div><div class="phase"><strong>10:45</strong>Exit</div></div></section></div>
+      </div>`;
+  }
+
+  function ticketFormHTML(){
+    return `<div class="panel-head"><div><h3>Add your ticket</h3><p>Upload a ticket photo. It opens your pass automatically in this local demo.</p></div></div>
+      <div class="ticket-upload"><input type="file" id="ticketFile" accept="image/*"><div><div class="upload-icon">${icon('ticket')}</div><h4>Choose ticket photo</h4><p>Tap here and select the ticket image from your phone.</p></div></div>
+      <div id="fileName" style="margin-top:9px;color:var(--muted);font-size:11px"></div>
+      <div class="or-line">or use ticket number</div>
+      <label class="form-label" for="ticketNumber">Ticket number</label><div class="ticket-number-wrap"><input class="form-control" id="ticketNumber" placeholder="Example: EVF-482913"><button class="btn btn-primary" id="verifyTicket">Open my pass</button></div>
+      <div class="local-note"><strong>Local demo:</strong> the ticket image stays in this browser. No database is connected.</div>`;
+  }
+
+  function verifyTicket(source='number'){
+    let number=($('#ticketNumber')?.value||'').trim();
+    const file=$('#ticketFile')?.files?.[0];
+    if(!number&&!file)return toast('Add your ticket','Upload a photo or enter a ticket number.');
+    if(!number)number='TKT-'+String(file.name).replace(/[^a-z0-9]/gi,'').slice(0,7).toUpperCase();
+    const hash=[...number].reduce((a,c)=>a+c.charCodeAt(0),0);
+    const blocks=['C12','D08','C07','D14','E03','B11'];
+    const block=blocks[hash%blocks.length];
+    const bestGate=chooseBestGateForBlock(block);
+    state.ticket={number,block,seat:`Row ${8+hash%18}, Seat ${12+hash%30}`,gate:bestGate,walk:5+hash%6,fileName:file?.name||''};
+    state.ticketVerified=true;state.selectedGate=bestGate;state.attendeeTarget='seat';
+    toast('Event pass ready',`${bestGate} Gate is your easiest entry right now.`);renderDashboard();
+  }
+
+  function attendeeStadium(){
+    if(!state.ticketVerified)return `${pageHead('Event Map','Add your ticket first.','Your ticket helps EventFlow show the right gate and route.')}<section class="panel">${ticketFormHTML()}</section>`;
+    return `${pageHead('Event Map','Choose a place and follow one route.','The map is kept simple on purpose. Use the buttons to change your destination.')}
+      <div class="destinations"><button class="dest-btn ${state.attendeeTarget==='seat'?'active':''}" data-destination="seat">My Seat</button><button class="dest-btn ${state.attendeeTarget==='food'?'active':''}" data-destination="food">Food</button><button class="dest-btn ${state.attendeeTarget==='washroom'?'active':''}" data-destination="washroom">Washroom</button><button class="dest-btn ${state.attendeeTarget==='medical'?'active':''}" data-destination="medical">Medical Help</button><button class="dest-btn ${state.attendeeTarget==='exit'?'active':''}" data-destination="exit">Exit</button></div><section class="panel">${stadiumMapHTML('attendee')}</section>`;
+  }
+
+  function stadiumMapHTML(mode='management'){
+    const g=state.shared.gates;const attendee=mode==='attendee';const t=state.ticket;
+    const targetMap={seat:t?`Block ${t.block}`:'Seat',food:'Food Zone A',washroom:'Washroom 3',medical:'Medical Help',exit:'East Exit',parking:'Parking P3',stay:'Vista Stay'};
+    const target=attendee?(targetMap[state.attendeeTarget]||targetMap.seat):`${state.selectedGate} Gate`;
+    return `<div class="clean-event-map"><div class="clean-road cr1"></div><div class="clean-road cr2"></div><div class="clean-stadium">UNITY STADIUM</div>
+      <div class="clean-gate cg-n"><b><i style="background:${colorValue(statusColor(g.North.crowd))}"></i>North Gate</b>${g.North.crowd}% crowd</div>
+      <div class="clean-gate cg-e"><b><i style="background:${colorValue(statusColor(g.East.crowd))}"></i>East Gate</b>${g.East.crowd}% crowd</div>
+      <div class="clean-gate cg-s"><b><i style="background:${colorValue(statusColor(g.South.crowd))}"></i>South Gate</b>${g.South.crowd}% crowd</div>
+      <div class="clean-gate cg-w"><b><i style="background:${colorValue(statusColor(g.West.crowd))}"></i>West Gate</b>${g.West.crowd}% crowd</div>
+      <div class="poi poi-food"><b>Food Zone A</b>Low wait</div><div class="poi poi-med"><b>Medical Help</b>Open now</div><div class="poi poi-wash"><b>Washroom 3</b>Near East stand</div><div class="poi poi-park"><b>Parking P3</b>52% space left</div>
+      ${attendee?'<div class="you-pin"></div><div class="route-path"></div>':''}<div class="map-status-card"><strong>${attendee?'Your route':'Selected area'}</strong>${target}<br>${attendee?`${t.gate} Gate is the best entry for your ticket.`:`${state.shared.gates[state.selectedGate].crowd}% crowd · ${state.shared.gates[state.selectedGate].wait} min wait`}</div></div>
+      <div class="map-phase-bar"><div class="phase"><strong>ARRIVE</strong>Travel + parking</div><div class="phase active"><strong>ENTER</strong>Gate + seat</div><div class="phase"><strong>INSIDE</strong>Food + help</div><div class="phase"><strong>LEAVE</strong>Exit + travel</div></div>`;
+  }
+
+  function operatorTravel(){
+    return `${pageHead('Travel Work','See movement, not just numbers.','Use this view to understand where people are coming from and where your team should move.')}
+      <div class="operator-focus"><section class="panel"><div class="panel-head"><div><h3>Movement view</h3><p>Parking P3 → Shuttle → East Gate</p></div></div><div class="operator-mini-map"><div class="om-route"></div><div class="om-stadium">STADIUM</div><div class="om-node om-east"><b>East Gate</b><br>43% crowd</div><div class="om-node om-p3"><b>Parking P3</b><br>52% space</div><div class="om-node om-hotel"><b>Metro East</b><br>72% load</div><div class="om-node om-shuttle"><b>Shuttle Point</b><br>6 ready</div></div></section><section class="panel"><div class="panel-head"><div><h3>Travel tasks</h3><p>What your team should do next.</p></div></div>${taskListFiltered(['shuttle','Parking','entry'],false)}</section></div>`;
+  }
+
+  function bindPageEvents(){
+    $$('[data-jump]').forEach(b=>b.addEventListener('click',()=>navTo(b.dataset.jump)));
+    $$('[data-gate]').forEach(b=>b.addEventListener('click',()=>{state.selectedGate=b.dataset.gate;toast(`${b.dataset.gate} Gate`,`${state.shared.gates[b.dataset.gate].crowd}% crowd · ${state.shared.gates[b.dataset.gate].wait} min wait.`);renderDashboard();}));
+    $$('[data-gate-row]').forEach(b=>b.addEventListener('click',()=>{state.selectedGate=b.dataset.gateRow;navTo('stadium');}));
+    $$('[data-event-select]').forEach(b=>b.addEventListener('click',()=>{state.selectedEventId=b.dataset.eventSelect;toast('Event opened',selectedEvent().title);renderDashboard();}));
+    $$('[data-destination]').forEach(b=>b.addEventListener('click',()=>{state.attendeeTarget=b.dataset.destination;renderDashboard();}));
+    $('#crowdSurgeBtn')?.addEventListener('click',triggerCrowdSurge);
+    $('#sendParkingMsg')?.addEventListener('click',()=>{state.shared.attendeeNotice='Parking P1 is almost full. If you are driving, use Parking P3 for easier parking.';saveShared();toast('Message sent','Attendee view now shows Parking P3.');});
+    $('#assignHotelTask')?.addEventListener('click',()=>addTask('Keep 40 hotel rooms ready','Hold 40 rooms at Vista Stay for late guests.','Medium','Hotel Partner Desk'));
+    $$('[data-approve]').forEach(b=>b.addEventListener('click',()=>approveAction(b.dataset.approve)));
+    $$('[data-ignore]').forEach(b=>b.addEventListener('click',()=>toast('Suggestion hidden','No change was made.')));
+    $$('[data-task-accept]').forEach(b=>b.addEventListener('click',()=>updateTask(b.dataset.taskAccept,'Accepted')));
+    $$('[data-task-progress]').forEach(b=>b.addEventListener('click',()=>updateTask(b.dataset.taskProgress,'In Progress')));
+    $$('[data-task-done]').forEach(b=>b.addEventListener('click',()=>updateTask(b.dataset.taskDone,'Done')));
+    $$('[data-hotel]').forEach(b=>b.addEventListener('click',()=>toast('Stay saved',`${b.dataset.hotel} is saved as your preferred stay.`)));
+    $('#verifyTicket')?.addEventListener('click',verifyTicket);
+    $('#ticketFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f){const n=$('#fileName');if(n)n.textContent=`Selected: ${f.name} · opening your pass...`;setTimeout(()=>verifyTicket('photo'),250);}});
+    $('#changeTicket')?.addEventListener('click',()=>{state.ticketVerified=false;state.ticket=null;state.attendeeTarget='seat';renderDashboard();});
   }
 
   render();

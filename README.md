@@ -1,73 +1,59 @@
-# EventFlow — Premium Local Demo
+# EventFlow — Visual Premium Local Demo
 
-A full browser-based hackathon demo with three separate roles:
+A clean, visual-first EventFlow prototype with three separate experiences:
 
-- Event Management
-- Operator
-- Attendee
+- **Attendee** — ticket photo/number → event pass → best gate → simple destination route → travel/stay/event timing
+- **Operator** — four live events → choose event → detailed tasks with where/what/by when → travel movement → hotel/resources
+- **Management** — multi-event view → simple live event map → crowd decisions → operator task assignment
 
-## What this version includes
+## What changed in this build
 
-- Premium white / soft-blue visual system
-- Very simple English across the UI
-- Landing page that explains EventFlow before login
-- Local Sign Up / Sign In using browser localStorage
-- Three role-based dashboards
-- Attendee ticket photo upload or ticket number flow
-- Personal seat, best gate and route demo
-- 3D-style stadium digital twin with crowd colors
-- Live demo crowd changes
-- Management actions that create operator tasks
-- Operator task status that is saved locally
-- Attendee messages that change after management/operator actions
-- Parking, travel, hotel/stay, event timeline, alerts and reports
-- Responsive desktop / tablet / mobile UI
-- No database
-- No API key
-- No environment variables
-
-## Run
-
-The easiest way:
-
-1. Open the folder.
-2. Double-click `index.html`.
-
-For a local server on macOS:
-
-```bash
-cd EventFlow-Reimagined
-python3 -m http.server 8080
-```
-
-Then open:
-
-`http://localhost:8080`
+- Less white / less dashboard clutter; stronger navy + soft violet/aqua contrast.
+- Landing page explains EventFlow visually before sign-in.
+- Landing page contains a simple animated event world/map.
+- Four live demo events are visible.
+- Attendee ticket photo opens the demo pass automatically.
+- Attendee chooses a destination: Seat, Food, Washroom, Medical Help, Exit, Parking, Stay.
+- Event map intentionally shows only useful places and one focused route.
+- Operator starts from a live-event hub instead of a dense dashboard.
+- Operator tasks now show **WHERE / WHAT TO DO / BY WHEN / route area**.
+- Management can select events and focuses on current decisions and team work.
+- All user-facing copy uses simple English.
+- Local browser auth only. No database, env file, API key, Supabase, or Google Maps required.
 
 ## Demo accounts
 
-All demo passwords are:
-
-`event123`
+Password for all: `event123`
 
 - Management: `manager@eventflow.demo`
 - Operator: `operator@eventflow.demo`
 - Attendee: `attendee@eventflow.demo`
 
-You can also create your own local account.
+## Run locally
 
-## Best demo story
+You can double-click `index.html`, or use a local web server:
 
-1. Open Management.
-2. Click **Run crowd surge demo**.
-3. North Gate becomes very busy.
-4. Open **Smart Actions** and approve the East Gate move.
-5. Sign out and open Operator.
-6. Open **My Tasks**, accept/start/finish a new task.
-7. Sign out and open Attendee.
-8. Add a ticket photo or ticket number.
-9. EventFlow shows the best gate, seat path, gate crowd and event journey.
+```bash
+python3 -m http.server 8080
+```
 
-## Important
+Then open:
 
-This is intentionally a local demo. It does not claim to show real GPS crowd data across different phones. Cross-device GPS/crowd sharing would need a backend later.
+```text
+http://localhost:8080
+```
+
+## Vercel
+
+From the project folder:
+
+```bash
+vercel login
+vercel --prod
+```
+
+This is a static site and requires no build command.
+
+## Important demo note
+
+Ticket image analysis is simulated locally for the prototype. No uploaded ticket is sent to a server. The project is designed as a hackathon demonstration of the EventFlow experience and cross-role workflow.
