@@ -45,3 +45,7 @@ Then open http://localhost:8080
 
 ## Map fix
 Organizer and Hospitality maps now include direct open buttons, a more reliable MapLibre CDN loader, and a built-in visible fallback map so the map area never stays blank.
+
+
+## Demo live event
+`City Music Night` is intentionally pinned as LIVE for the hackathon demo so the main event list always shows one active event.

@@ -4,7 +4,7 @@ const bc = 'BroadcastChannel' in window ? new BroadcastChannel(CHANNEL_NAME) : n
 
 const demoEvents = [
   { id:'EVT-MUM-CRK-0912', title:'India vs Pakistan — Night Match', type:'Cricket', venue:'Harbour Arena, Mumbai', date:'2026-09-12', start:'18:30', end:'23:15', attendance:58420, phase:'Entry planning', color:'coral' },
-  { id:'EVT-MUM-MUS-0909', title:'City Music Night', type:'Concert', venue:'Central Grounds, Mumbai', date:'2026-09-09', start:'18:00', end:'23:30', attendance:21480, phase:'Main performance', color:'violet' },
+  { id:'EVT-MUM-MUS-0909', title:'City Music Night', type:'Concert', venue:'Central Grounds, Mumbai', date:'2026-09-10', start:'00:00', end:'23:59', attendance:21480, phase:'Main performance', color:'violet', forceLive:true },
   { id:'EVT-MUM-TEC-0911', title:'Future Tech Expo', type:'Expo', venue:'Innovation Hall, Mumbai', date:'2026-09-11', start:'10:00', end:'19:00', attendance:8700, phase:'Setup', color:'green' },
   { id:'EVT-MUM-FOD-0909', title:'City Food Festival', type:'Festival', venue:'Riverfront District, Mumbai', date:'2026-09-09', start:'12:00', end:'22:00', attendance:12940, phase:'Dinner peak', color:'amber' },
   { id:'EVT-MUM-CON-0907', title:'Creators Conference 2026', type:'Conference', venue:'Grand Convention Centre', date:'2026-09-07', start:'09:00', end:'18:00', attendance:5320, phase:'Completed', color:'green' }
@@ -99,7 +99,7 @@ bc?.addEventListener('message',()=>{state=loadState();if(state.session)renderShe
 function esc(s=''){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 function initials(name='Demo User'){return name.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase()}
 function formatDate(date){return new Date(date+'T12:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
-function eventStatus(e){const now=new Date(),start=new Date(`${e.date}T${e.start}:00`),end=new Date(`${e.date}T${e.end}:00`);if(now<start)return'upcoming';if(now>end)return'completed';return'live'}
+function eventStatus(e){if(e.forceLive)return'live';const now=new Date(),start=new Date(`${e.date}T${e.start}:00`),end=new Date(`${e.date}T${e.end}:00`);if(now<start)return'upcoming';if(now>end)return'completed';return'live'}
 function statusLabel(s){return s==='live'?'LIVE':s==='upcoming'?'UPCOMING':'COMPLETED'}
 function statusClass(s){return s==='live'?'success':s==='upcoming'?'violet':''}
 function selectedEvent(){return demoEvents.find(e=>e.id===selectedEventId)||demoEvents[1]}
