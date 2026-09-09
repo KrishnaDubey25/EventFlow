@@ -1,37 +1,24 @@
-# EventFlow — Visual Premium Local Demo
+# EventFlow — 3D Premium Demo
 
-A clean, visual-first EventFlow prototype with three separate experiences:
+A browser-first EventFlow prototype with three roles:
 
-- **Attendee** — ticket photo/number → event pass → best gate → simple destination route → travel/stay/event timing
-- **Operator** — four live events → choose event → detailed tasks with where/what/by when → travel movement → hotel/resources
-- **Management** — multi-event view → simple live event map → crowd decisions → operator task assignment
+- Event Management
+- Operator
+- Attendee
 
-## What changed in this build
+## Important design choices
 
-- Less white / less dashboard clutter; stronger navy + soft violet/aqua contrast.
-- Landing page explains EventFlow visually before sign-in.
-- Landing page contains a simple animated event world/map.
-- Four live demo events are visible.
-- Attendee ticket photo opens the demo pass automatically.
-- Attendee chooses a destination: Seat, Food, Washroom, Medical Help, Exit, Parking, Stay.
-- Event map intentionally shows only useful places and one focused route.
-- Operator starts from a live-event hub instead of a dense dashboard.
-- Operator tasks now show **WHERE / WHAT TO DO / BY WHEN / route area**.
-- Management can select events and focuses on current decisions and team work.
-- All user-facing copy uses simple English.
-- Local browser auth only. No database, env file, API key, Supabase, or Google Maps required.
+- No map on the public landing page.
+- Live demo events are shown before login.
+- Accounts and demo state run locally in the browser using localStorage.
+- No Supabase, database, API key or environment file is required.
+- 3D maps only appear inside attendee / operator / management workflows where a map is useful.
+- 3D maps use MapLibre GL JS with OpenFreeMap / OpenStreetMap map data. No Google Maps API key is required.
+- If map tiles cannot load, EventFlow shows a clean offline fallback instead of breaking the page.
 
-## Demo accounts
+## Run
 
-Password for all: `event123`
-
-- Management: `manager@eventflow.demo`
-- Operator: `operator@eventflow.demo`
-- Attendee: `attendee@eventflow.demo`
-
-## Run locally
-
-You can double-click `index.html`, or use a local web server:
+You can double-click `index.html`, but for the best browser behavior use a local server:
 
 ```bash
 python3 -m http.server 8080
@@ -39,21 +26,23 @@ python3 -m http.server 8080
 
 Then open:
 
-```text
-http://localhost:8080
-```
+`http://localhost:8080`
 
-## Vercel
+## Demo flow
 
-From the project folder:
+1. Open the landing page.
+2. Pick one of the four demo live events.
+3. Choose Attendee, Operator or Event Management.
+4. Attendee: enter a ticket number (or use Demo Pass), choose what you want to do now, then press **Go there** to open the 3D map and route.
+5. Operator: pick a live event, open tasks, use **Show on 3D map**, and update task status.
+6. Management: open a live event, see the event health overview, crowd, travel, hotels, tasks and 3D operations map.
 
-```bash
-vercel login
-vercel --prod
-```
+## Demo accounts
 
-This is a static site and requires no build command.
+Password for all demo accounts: `event123`
 
-## Important demo note
+- Management: `manager@eventflow.demo`
+- Operator: `operator@eventflow.demo`
+- Attendee: `attendee@eventflow.demo`
 
-Ticket image analysis is simulated locally for the prototype. No uploaded ticket is sent to a server. The project is designed as a hackathon demonstration of the EventFlow experience and cross-role workflow.
+The accounts are seeded into localStorage when the app first runs.
