@@ -1,0 +1,77 @@
+EventFlow validation
+====================
+
+
+> react-example@0.0.0 test:final
+> node checks/final-workflow-check.mjs
+
+
+EventFlow final workflow audit
+PASS  Attendee overview no longer renders Connect/Add Pass journey block
+PASS  Attendee overview links directly to indoor navigation
+PASS  Attendee indoor-map route exists
+PASS  Operator indoor-map route exists
+PASS  Organizer indoor-map route remains available
+PASS  Draft/publish storage workflow exists
+PASS  Attendee/operator load published map while organizer can edit draft
+PASS  Attendee inside-event presence and route-source callbacks exist
+PASS  Organizer volunteer drag/reassignment callback exists
+PASS  Organizer crowd page visualizes inside-event attendee positions
+PASS  Operator field checklist can acknowledge/complete volunteer tasks
+PASS  Nugen assistant mounted for attendee
+PASS  Nugen assistant mounted for organizer
+PASS  Nugen assistant mounted for operator
+PASS  Nugen context is role-specific
+PASS  Nugen role-chat endpoint exists locally and on Vercel
+PASS  Weather/Nugen combined advisor endpoint removed
+PASS  Weather Twin uses live weather + public/social signals
+PASS  Weather Twin includes geospatial map visualization
+PASS  Weather Twin provides interactive what-if controls
+PASS  Weather Twin provides operational shifts + uncertainty
+PASS  Weather page is not combined with Nugen UI
+PASS  Resource capacity derives system calculations from resource/live-demand data
+PASS  Capacity trend registry is persisted and visualized
+
+24/24 checks passed.
+
+
+> react-example@0.0.0 test:user-flow
+> node checks/user-request-audit.mjs
+
+
+EventFlow user-request audit
+PASS  Published map indexed by event and name
+PASS  Attendee/operator have published-map fallback
+PASS  Organizer edits draft while other roles read published copy
+PASS  Indoor map keeps correct role sidebar/layout
+PASS  Attendee sees nearby operators and help action
+PASS  Help request lifecycle persisted
+PASS  Operator checklist receives help requests
+PASS  Crowd page owns live attendee-position view
+PASS  Organizer operator drag creates field assignment
+PASS  Operator can acknowledge and finish field tasks
+PASS  Schedule/plan appears below event banner
+PASS  Attendee event location has robust fallback
+PASS  Attendee event plan is compact/card based
+PASS  Ecosystem and Alerts removed from organizer navigation
+PASS  Legacy Ecosystem/Alerts routes redirect safely
+PASS  Dependencies moved into My Events configuration
+PASS  Each event config exposes event-specific Weather
+PASS  Connected nodes + capacity moved to Overview
+PASS  Live Command pressure/risk summary cards removed
+PASS  Live Command retains compact warnings/actions/resource cards
+PASS  Live Command resource cards show trend registry
+PASS  Simulation warnings feed the bell notification system
+PASS  Weather Twin supports per-event location selection
+PASS  Weather shows forecast rain window + suggested shifts
+PASS  Weather uncertainty stays visible compactly
+PASS  Medical/Other removed from Hospitality tabs
+PASS  Hospitality overview summary restricted to food/concessions
+PASS  Alerts exposed through bell drawer, not organizer page navigation
+PASS  Repeated simulation alerts refresh instead of being silently discarded
+PASS  Attendee API JSON reads guard against HTML/doctype responses
+
+30/30 checks passed.
+
+TypeScript parser audit: 0 syntax/parser errors (dependency type packages unavailable in artifact container).
+npm install/build note: package install timed out in artifact environment; run npm install && npm run build locally.

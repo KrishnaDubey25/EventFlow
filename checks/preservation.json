@@ -1,0 +1,19 @@
+{
+  "original_files": 146,
+  "unchanged": 134,
+  "modified": [
+    ".env.example",
+    ".gitignore",
+    "package.json",
+    "server.ts",
+    "src/App.tsx",
+    "src/index.css",
+    "src/components/layout/sidebarConfig.ts",
+    "src/pages/HomePage.tsx",
+    "src/pages/EventHubPage.tsx",
+    "src/pages/operator/OperatorEventDetailPage.tsx",
+    "src/pages/organizer/OrganizerCrowdPage.tsx",
+    "src/services/attendeeIntelligenceService.ts"
+  ],
+  "missing": []
+}

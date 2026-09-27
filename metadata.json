@@ -1,0 +1,7 @@
+{
+  "name": "EventFlow",
+  "description": "Intelligent mega-event orchestration platform connecting venues, crowd movement, transport, parking, hospitality, and attendees.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

@@ -1,0 +1,862 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #FBF8F1;
+    color: #0B1120;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: 'Playfair Display', 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+.hero-scan-grid {
+  background-image:
+    linear-gradient(rgba(201, 161, 92, 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(228, 217, 190, 0.06) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: heroGridDrift 18s linear infinite;
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.2));
+}
+
+@keyframes heroGridDrift {
+  from {
+    background-position: 0 0, 0 0;
+  }
+  to {
+    background-position: 88px 44px, 88px 44px;
+  }
+}
+
+/* Premium Light Shadows & Card Elevation */
+.elevation-card {
+  background: #F5EFE2;
+  border: 1px solid rgba(11, 17, 32, 0.08);
+  box-shadow: 0 1px 3px 0 rgba(11, 17, 32, 0.04), 0 6px 16px -4px rgba(11, 17, 32, 0.06);
+}
+
+.elevation-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.elevation-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px -8px rgba(11, 17, 32, 0.12), 0 4px 12px -2px rgba(11, 17, 32, 0.05);
+  border-color: rgba(201, 161, 92, 0.3);
+}
+
+/* Subtle architectural borders */
+.border-subtle {
+  border-color: rgba(245, 239, 226, 0.08);
+}
+
+/* Modern clean scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5EFE2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C9A15C;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8A6A32;
+}
+
+/* Card Light Flash Beam Animation - Sweeps smoothly from one side to the other */
+@keyframes cardFlashSheen {
+  0% {
+    transform: translateX(-160%) skewX(-22deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  32% {
+    transform: translateX(280%) skewX(-22deg);
+    opacity: 0.85;
+  }
+  38%, 100% {
+    transform: translateX(280%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+.card-flash-beam {
+  position: absolute;
+  top: -35%;
+  bottom: -35%;
+  left: 0;
+  width: 50%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(11, 17, 32, 0.02) 15%,
+    rgba(201, 161, 92, 0.4) 38%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(201, 161, 92, 0.4) 62%,
+    rgba(11, 17, 32, 0.02) 85%,
+    transparent 100%
+  );
+  filter: blur(2px);
+  pointer-events: none;
+  animation: cardFlashSheen 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.archetype-flash-beam {
+  position: absolute;
+  top: -35%;
+  bottom: -35%;
+  left: 0;
+  width: 55%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(11, 17, 32, 0.03) 20%,
+    rgba(201, 161, 92, 0.35) 42%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(201, 161, 92, 0.35) 58%,
+    transparent 100%
+  );
+  filter: blur(1.5px);
+  pointer-events: none;
+  animation: cardFlashSheen 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Premium gold-glow pulse used behind hero copy & active elements */
+@keyframes goldPulseGlow {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.06);
+  }
+}
+
+.gold-pulse-glow {
+  animation: goldPulseGlow 3.2s ease-in-out infinite;
+}
+
+/* Slow ambient drift for hero copy block, layered on top of entrance animation */
+@keyframes heroTextFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.hero-text-float {
+  animation: heroTextFloat 6.5s ease-in-out infinite;
+}
+
+/* Rotating conic gold border sheen for premium card frames */
+@keyframes borderSheenRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.gold-border-sheen {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(201, 161, 92, 0.9) 12%,
+    transparent 24%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: borderSheenRotate 5s linear infinite;
+  pointer-events: none;
+}
+
+.group:hover .gold-border-sheen,
+.gold-border-sheen.is-active {
+  opacity: 1;
+}
+
+/* Accessibility: honor reduced motion throughout the original experience. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+
+/* ============================================================
+   EVENTFLOW INTERNAL APP SHELL
+   Landing page remains untouched. This applies only to the
+   authenticated app shells (.eventflow-app): a deep-navy chrome
+   (sidebar/header) around each page's own light content cards.
+   Kept minimal and non-invasive so it never fights a page's own
+   text/background colors (previous versions here caused the
+   inconsistent, low-contrast look by force-overriding only some
+   hex values and missing others).
+   ============================================================ */
+.eventflow-app {
+  --ef-navy: #0B1120;
+  --ef-gold: #C9A15C;
+  background: linear-gradient(180deg, #0B1120 0%, #0D1627 100%);
+  color: #F5EFE2;
+}
+
+.eventflow-app,
+.eventflow-app main,
+.eventflow-app section,
+.eventflow-app article,
+.eventflow-app aside,
+.eventflow-app nav,
+.eventflow-app header,
+.eventflow-app footer,
+.eventflow-app button,
+.eventflow-app input,
+.eventflow-app select,
+.eventflow-app textarea {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.eventflow-app main { color: inherit; }
+.eventflow-app main p { line-height: 1.6; }
+.eventflow-app main h1 { font-weight: 800; letter-spacing: -0.02em; }
+.eventflow-app main h2,
+.eventflow-app main h3 { font-weight: 700; letter-spacing: -0.02em; }
+
+/* Cards each page renders already carry their own readable
+   text/background pairing — just give them a bit of consistent
+   lift against the dark shell instead of overriding their colors. */
+.eventflow-app main [class*="rounded-3xl"],
+.eventflow-app main [class*="rounded-2xl"] {
+  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 12px 28px rgba(0,0,0,.20);
+}
+
+.eventflow-app button:not([disabled]),
+.eventflow-app a {
+  transition: transform .18s ease, border-color .18s ease, background-color .18s ease, color .18s ease, opacity .18s ease;
+}
+.eventflow-app button:not([disabled]):hover { transform: translateY(-1px); }
+
+.eventflow-app button:not([disabled]):focus-visible,
+.eventflow-app a:focus-visible,
+.eventflow-app input:focus-visible,
+.eventflow-app select:focus-visible,
+.eventflow-app textarea:focus-visible {
+  outline: 2px solid var(--ef-gold);
+  outline-offset: 2px;
+}
+
+.eventflow-app input[type="range"] { accent-color: var(--ef-gold); }
+
+.eventflow-app .leaflet-container { background: #0E192B; }
+.eventflow-app .leaflet-control-zoom a { background:#F5EFE2; color:#0B1120; border-color:#D8CCB2; }
+.eventflow-app .leaflet-control-attribution { background:rgba(245,239,226,.88); color:#4A4236; }
+
+@media (max-width: 768px) {
+  .eventflow-app main { padding-top: 1.25rem; }
+}
+
+/* ============================================================
+   FINAL READABILITY + PROFESSIONAL POLISH PASS
+   Keeps the existing EventFlow navy / beige / blue palette.
+   The goal is contrast, hierarchy and form legibility only.
+   ============================================================ */
+.eventflow-app {
+  --ef-ink: #0B1120;
+  --ef-ink-2: #241E17;
+  --ef-muted-ink: #5F594F;
+  --ef-navy: #0B1120;
+  --ef-navy-2: #101A2D;
+  --ef-navy-3: #16213B;
+  --ef-cream: #F0E9D6;
+  --ef-paper: #FFFDF8;
+  --ef-paper-blue: #F7FAFF;
+  --ef-blue: #4F7CFF;
+  --ef-blue-strong: #2D5FD2;
+  --ef-gold: #C9A15C;
+  --ef-border: #C9D9F7;
+  --ef-on-dark: #F8F6F0;
+  --ef-on-dark-muted: #BBC7D8;
+}
+
+/* Sharper type hierarchy without changing the product's font family. */
+.eventflow-app main h1 {
+  color: inherit;
+  font-size: clamp(1.75rem, 2.3vw, 2.35rem);
+  line-height: 1.12;
+}
+.eventflow-app main h2 { line-height: 1.2; }
+.eventflow-app main h3 { line-height: 1.3; }
+.eventflow-app main p,
+.eventflow-app main li,
+.eventflow-app main td,
+.eventflow-app main th { text-rendering: optimizeLegibility; }
+
+/* Light EventFlow surfaces must always inherit a dark readable foreground. */
+.eventflow-app :is(
+  [class*="bg-[#F0E9D6]"],
+  [class*="bg-[#F7FAFF]"],
+  [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FBF8F1]"],
+  [class*="bg-[#FBFBFC]"],
+  [class*="bg-[#FAF9F5]"],
+  [class*="bg-[#F5EFE2]"],
+  [class*="bg-[#FFFDF8]"],
+  .bg-white
+) {
+  color: var(--ef-ink);
+}
+
+/* Restore secondary copy on light cards even when nested in a dark shell. */
+.eventflow-app :is(
+  [class*="bg-[#F0E9D6]"],
+  [class*="bg-[#F7FAFF]"],
+  [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FBF8F1]"],
+  [class*="bg-[#FBFBFC]"],
+  [class*="bg-[#FAF9F5]"],
+  [class*="bg-[#F5EFE2]"],
+  [class*="bg-[#FFFDF8]"],
+  .bg-white
+) :is(
+  [class*="text-[#6B6252]"],
+  [class*="text-[#8C8272]"],
+  [class*="text-[#4A4236]"]
+) {
+  color: var(--ef-muted-ink) !important;
+}
+
+/* Dark surfaces get a predictable readable foreground. */
+.eventflow-app :is(
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0D1627]"],
+  [class*="bg-[#101A2D]"],
+  [class*="bg-[#10233D]"],
+  [class*="bg-[#102A43]"],
+  [class*="bg-[#0C1B30]"],
+  [class*="bg-[#0A1628]"],
+  [class*="bg-[#13223A]"],
+  [class*="bg-[#132944]"],
+  [class*="bg-[#16213B]"],
+  [class*="bg-[#070B14]"]
+) {
+  color: var(--ef-on-dark);
+}
+
+/* Common legacy brown/dark text utilities were invisible on navy cards. */
+.eventflow-app :is(
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0D1627]"],
+  [class*="bg-[#101A2D]"],
+  [class*="bg-[#10233D]"],
+  [class*="bg-[#102A43]"],
+  [class*="bg-[#0C1B30]"],
+  [class*="bg-[#0A1628]"],
+  [class*="bg-[#13223A]"],
+  [class*="bg-[#132944]"],
+  [class*="bg-[#16213B]"],
+  [class*="bg-[#070B14]"]
+) :is(
+  [class*="text-[#0B1120]"],
+  [class*="text-[#241E17]"],
+  [class*="text-[#382F27]"],
+  [class*="text-[#4A4236]"]
+) {
+  color: var(--ef-on-dark) !important;
+}
+
+.eventflow-app :is(
+  [class*="bg-[#0B1120]"],
+  [class*="bg-[#0D1627]"],
+  [class*="bg-[#101A2D]"],
+  [class*="bg-[#10233D]"],
+  [class*="bg-[#102A43]"],
+  [class*="bg-[#0C1B30]"],
+  [class*="bg-[#0A1628]"],
+  [class*="bg-[#13223A]"],
+  [class*="bg-[#132944]"],
+  [class*="bg-[#16213B]"],
+  [class*="bg-[#070B14]"]
+) :is(
+  [class*="text-[#6B6252]"],
+  [class*="text-[#8C8272]"],
+  [class*="text-[#B9B09F]"]
+) {
+  color: var(--ef-on-dark-muted) !important;
+}
+
+/* Form controls: entered text, placeholder, selected option and caret stay visible.
+   This fixes the create-event and configuration forms where inherited shell text
+   could become cream-on-cream. */
+.eventflow-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.eventflow-app textarea,
+.eventflow-app select {
+  color: var(--ef-ink);
+  background-color: var(--ef-paper);
+  border-color: rgba(117, 143, 183, 0.48);
+  caret-color: var(--ef-blue-strong);
+  font-weight: 550;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 1px 2px rgba(11,17,32,.04);
+}
+
+.eventflow-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
+.eventflow-app textarea::placeholder {
+  color: #7B746A;
+  opacity: 1;
+  font-weight: 450;
+}
+
+.eventflow-app select option {
+  color: var(--ef-ink);
+  background: var(--ef-paper);
+}
+
+.eventflow-app input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.eventflow-app textarea:focus,
+.eventflow-app select:focus {
+  outline: none;
+  border-color: var(--ef-blue) !important;
+  box-shadow: 0 0 0 3px rgba(79,124,255,.15), inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+/* Explicit dark command inputs keep their intended dark treatment. */
+.eventflow-app :is(
+  input[class*="bg-[#0B1120]"],
+  input[class*="bg-[#101A2D]"],
+  input[class*="bg-[#16213B]"],
+  textarea[class*="bg-[#0B1120]"],
+  textarea[class*="bg-[#101A2D]"],
+  select[class*="bg-[#0B1120]"],
+  select[class*="bg-[#101A2D]"]
+) {
+  color: var(--ef-on-dark) !important;
+  background-color: var(--ef-navy) !important;
+  border-color: rgba(201,161,92,.30) !important;
+}
+.eventflow-app :is(
+  input[class*="bg-[#0B1120]"],
+  input[class*="bg-[#101A2D]"],
+  textarea[class*="bg-[#0B1120]"]
+)::placeholder {
+  color: #AEB9C8 !important;
+}
+
+/* Labels and helper copy are deliberately stronger than before. */
+.eventflow-app label {
+  color: inherit;
+  letter-spacing: .005em;
+}
+.eventflow-app form label,
+.eventflow-app [class*="rounded-3xl"] label,
+.eventflow-app [class*="rounded-2xl"] label {
+  font-weight: 700;
+}
+
+/* Professional card separation: no theme change, only stronger structure. */
+.eventflow-app main :is([class*="rounded-3xl"], [class*="rounded-2xl"]) {
+  border-color: rgba(128, 151, 187, .25);
+}
+.eventflow-app main :is([class*="bg-[#F0E9D6]"], [class*="bg-[#F7FAFF]"], [class*="bg-[#F4F8FF]"]) {
+  box-shadow: 0 1px 0 rgba(255,255,255,.55), 0 12px 30px rgba(8,20,44,.08);
+}
+
+/* Buttons feel aligned and intentional without making icon-only controls huge. */
+.eventflow-app button[class*="px-"],
+.eventflow-app a[class*="px-"] {
+  min-height: 2.5rem;
+}
+.eventflow-app button:focus-visible,
+.eventflow-app a:focus-visible,
+.eventflow-app input:focus-visible,
+.eventflow-app textarea:focus-visible,
+.eventflow-app select:focus-visible {
+  outline: 2px solid rgba(120,183,255,.95);
+  outline-offset: 2px;
+}
+
+/* Tables/lists read cleanly on both light and dark surfaces. */
+.eventflow-app table { border-collapse: separate; border-spacing: 0; }
+.eventflow-app th { font-weight: 750; }
+.eventflow-app td { line-height: 1.45; }
+
+/* Better mobile form legibility. */
+@media (max-width: 640px) {
+  .eventflow-app input,
+  .eventflow-app select,
+  .eventflow-app textarea { font-size: 16px; }
+}
+
+/* Contrast-safe use of the same EventFlow blue family. */
+.eventflow-app :is(
+  [class*="bg-[#F0E9D6]"],
+  [class*="bg-[#F7FAFF]"],
+  [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FFFDF8]"],
+  .bg-white
+) [class*="text-[#4F7CFF]"] {
+  color: var(--ef-blue-strong) !important;
+}
+.eventflow-app :is(button, a)[class*="bg-[#4F7CFF]"] {
+  background-color: var(--ef-blue-strong) !important;
+  color: #FFFFFF !important;
+}
+
+/* ================================================================
+   FORM VISIBILITY HARD FIX
+   Keep the existing EventFlow palette, but make every editable value,
+   placeholder, selected option and browser autofill state readable.
+   ================================================================ */
+.eventflow-app :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select
+) {
+  color: #0B1120 !important;
+  -webkit-text-fill-color: #0B1120 !important;
+  background-color: #FFFDF8 !important;
+  border-color: #AFC3E3 !important;
+  caret-color: #1F56C5 !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  color-scheme: light;
+}
+
+.eventflow-app :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea
+)::placeholder {
+  color: #68645C !important;
+  -webkit-text-fill-color: #68645C !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+.eventflow-app select option,
+.eventflow-app select optgroup {
+  color: #0B1120 !important;
+  -webkit-text-fill-color: #0B1120 !important;
+  background: #FFFDF8 !important;
+  opacity: 1 !important;
+}
+
+.eventflow-app :is(input, textarea, select):disabled {
+  color: #4B5565 !important;
+  -webkit-text-fill-color: #4B5565 !important;
+  background-color: #E9EEF6 !important;
+  border-color: #C5D2E6 !important;
+  opacity: 1 !important;
+  cursor: not-allowed;
+}
+
+.eventflow-app :is(input, textarea, select):focus {
+  color: #071326 !important;
+  -webkit-text-fill-color: #071326 !important;
+  background-color: #FFFFFF !important;
+  border-color: #356EE6 !important;
+  box-shadow: 0 0 0 3px rgba(53,110,230,.18) !important;
+  outline: none !important;
+}
+
+/* Chrome/Safari autofill otherwise paints very light text in some dark-shell forms. */
+.eventflow-app input:-webkit-autofill,
+.eventflow-app input:-webkit-autofill:hover,
+.eventflow-app input:-webkit-autofill:focus,
+.eventflow-app textarea:-webkit-autofill,
+.eventflow-app select:-webkit-autofill {
+  -webkit-text-fill-color: #0B1120 !important;
+  caret-color: #1F56C5 !important;
+  -webkit-box-shadow: 0 0 0 1000px #FFFDF8 inset !important;
+  box-shadow: 0 0 0 1000px #FFFDF8 inset !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.eventflow-app input[type="date"],
+.eventflow-app input[type="time"],
+.eventflow-app input[type="datetime-local"],
+.eventflow-app input[type="month"],
+.eventflow-app input[type="week"] {
+  color-scheme: light;
+}
+
+.eventflow-app input[type="file"] {
+  color: #24334A !important;
+  -webkit-text-fill-color: #24334A !important;
+}
+.eventflow-app input[type="file"]::file-selector-button {
+  color: #FFFFFF;
+  background: #16345D;
+  border: 0;
+  border-radius: .65rem;
+  padding: .5rem .75rem;
+  margin-right: .75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Labels and form helper text should never inherit washed-out shell colours. */
+.eventflow-app form label {
+  color: #EAF1FA;
+}
+.eventflow-app form :is(
+  [class*="bg-[#F0E9D6]"], [class*="bg-[#F7FAFF]"], [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FBF8F1]"], [class*="bg-[#FFFDF8]"], .bg-white
+) label {
+  color: #243247 !important;
+}
+
+/* Native validity messages/selected values remain crisp, even if Tailwind text utilities conflict. */
+.eventflow-app input::selection,
+.eventflow-app textarea::selection {
+  background: #BBD2FF;
+  color: #071326;
+}
+
+/* ================================================================
+   FINAL TEXT VISIBILITY PASS — same palette, stronger legibility.
+   Applies only inside authenticated EventFlow surfaces.
+   ================================================================ */
+.eventflow-app main {
+  color: #EAF1FA;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.eventflow-app main :is(h1,h2,h3,h4,h5,h6,strong,b) {
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+.eventflow-app main :is(p,span,small,label,li,td,th,button,a) {
+  opacity: 1;
+}
+.eventflow-app main :is(
+  [class*="bg-[#F0E9D6]"], [class*="bg-[#F7FAFF]"], [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FFFDF8]"], [class*="bg-white"], .bg-white
+) {
+  color: #0B1120;
+}
+.eventflow-app main :is(
+  [class*="bg-[#F0E9D6]"], [class*="bg-[#F7FAFF]"], [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FFFDF8]"], [class*="bg-white"], .bg-white
+) :is(p,span,small,label,li,td,th) {
+  text-shadow: none !important;
+}
+.eventflow-app main :is(
+  [class*="bg-[#0B1120]"], [class*="bg-[#101A2D]"], [class*="bg-[#16213B]"],
+  [class*="bg-[#0C1B30]"], [class*="bg-[#070B14]"]
+) :is(h1,h2,h3,h4,h5,h6,strong,b) {
+  color: #F8FBFF !important;
+}
+.eventflow-app main :is(
+  [class*="bg-[#0B1120]"], [class*="bg-[#101A2D]"], [class*="bg-[#16213B]"],
+  [class*="bg-[#0C1B30]"], [class*="bg-[#070B14]"]
+) :is(p,span,small,label,li) {
+  color: #C9D5E6;
+}
+.eventflow-app main button:disabled,
+.eventflow-app main input:disabled,
+.eventflow-app main select:disabled,
+.eventflow-app main textarea:disabled {
+  opacity: .72 !important;
+}
+
+/* Attendee overview: keep EventFlow navy/beige identity without a blue-on-blue wall. */
+.eventflow-app .attendee-overview .attendee-overview-stat{
+  background:#F0E9D6;
+  border-color:rgba(201,161,92,.34);
+  box-shadow:0 12px 34px rgba(2,10,25,.16);
+}
+.eventflow-app .attendee-overview .attendee-overview-stat-icon{color:#173A67!important;}
+.eventflow-app .attendee-overview .attendee-overview-stat-value{color:#0B1120!important;}
+.eventflow-app .attendee-overview .attendee-overview-stat-label{color:#5E5548!important;}
+.eventflow-app .attendee-overview .attendee-quick-card{
+  background:linear-gradient(145deg,#F4EEDC 0%,#EAE1CA 100%);
+  border-color:rgba(201,161,92,.28);
+  color:#0B1120!important;
+  box-shadow:0 10px 28px rgba(2,10,25,.14);
+}
+.eventflow-app .attendee-overview .attendee-quick-card:hover{
+  background:#F8F2E5;
+  border-color:rgba(78,124,255,.38);
+  transform:translateY(-2px);
+}
+.eventflow-app .attendee-overview .attendee-quick-icon{
+  background:#102A43!important;
+  color:#F5EFE2!important;
+}
+.eventflow-app .attendee-overview .attendee-quick-title{color:#0B1120!important;font-weight:800;}
+.eventflow-app .attendee-overview .attendee-quick-copy{color:#5A5144!important;font-weight:600;}
+
+/* ======================================================================
+   CONTRAST ENGINE V3
+   Keeps EventFlow's navy + beige palette while preventing dark-on-dark
+   and washed-out text. Surface variables survive nested cards correctly.
+   ====================================================================== */
+.eventflow-app :is(
+  [class*="bg-[#0B1120]"], [class*="bg-[#0D1627]"], [class*="bg-[#101A2D]"],
+  [class*="bg-[#10233D]"], [class*="bg-[#102A43]"], [class*="bg-[#0C1B30]"],
+  [class*="bg-[#0A1628]"], [class*="bg-[#13223A]"], [class*="bg-[#132944]"],
+  [class*="bg-[#16213B]"], [class*="bg-[#070B14]"], .bg-black
+) {
+  --ef-surface-fg: #F8FBFF;
+  --ef-surface-muted: #C6D1E0;
+  --ef-surface-soft: #AEBBCE;
+  color: var(--ef-surface-fg);
+}
+
+.eventflow-app :is(
+  [class*="bg-[#F0E9D6]"], [class*="bg-[#F7FAFF]"], [class*="bg-[#F4F8FF]"],
+  [class*="bg-[#FBF8F1]"], [class*="bg-[#FBFBFC]"], [class*="bg-[#FAF9F5]"],
+  [class*="bg-[#F5EFE2]"], [class*="bg-[#FFFDF8]"], [class*="bg-[#EDE3CB]"],
+  .bg-white, [class*="bg-rose-50"], [class*="bg-amber-50"], [class*="bg-emerald-50"],
+  [class*="bg-blue-50"], [class*="bg-indigo-50"], [class*="bg-teal-50"]
+) {
+  --ef-surface-fg: #0B1120;
+  --ef-surface-muted: #544C41;
+  --ef-surface-soft: #6B6252;
+}
+
+/* Legacy dark text utilities now follow the nearest surface, including nested cards. */
+.eventflow-app :is(
+  [class*="text-[#0B1120]"], [class*="text-[#071326]"], [class*="text-[#241E17]"],
+  [class*="text-[#382F27]"], [class*="text-[#4A4236]"], [class*="text-black"],
+  [class*="text-gray-900"], [class*="text-slate-900"], [class*="text-zinc-900"],
+  [class*="text-neutral-900"], [class*="text-stone-900"]
+) {
+  color: var(--ef-surface-fg, #0B1120) !important;
+  -webkit-text-fill-color: var(--ef-surface-fg, #0B1120) !important;
+}
+
+.eventflow-app :is(
+  [class*="text-[#6B6252]"], [class*="text-[#8C8272]"], [class*="text-[#8F897D]"],
+  [class*="text-[#B9B09F]"], [class*="text-gray-500"], [class*="text-gray-600"],
+  [class*="text-slate-500"], [class*="text-slate-600"]
+) {
+  color: var(--ef-surface-muted, #5B6472) !important;
+  -webkit-text-fill-color: var(--ef-surface-muted, #5B6472) !important;
+}
+
+.eventflow-app :is(h1,h2,h3,h4,h5,h6,strong,b,label,button,a,input,textarea,select) {
+  text-rendering: optimizeLegibility;
+}
+
+/* Do not let opacity utilities make critical labels/field text disappear. */
+.eventflow-app :is(label,h1,h2,h3,h4,h5,h6) { opacity: 1 !important; }
+.eventflow-app :is(input,textarea,select) { opacity: 1 !important; }
+
+/* ======================================================================
+   AUTH VISUAL SYSTEM — same EventFlow navy / beige / gold language.
+   ====================================================================== */
+.eventflow-auth {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(45,95,210,.16), transparent 30%),
+    radial-gradient(circle at 88% 88%, rgba(201,161,92,.12), transparent 32%),
+    #0B1120 !important;
+}
+.eventflow-auth .eventflow-auth-header {
+  color: #F5EFE2;
+  box-shadow: 0 1px 0 rgba(201,161,92,.08);
+}
+.eventflow-auth .eventflow-auth-header a,
+.eventflow-auth .eventflow-auth-header span {
+  color: #F5EFE2 !important;
+}
+.eventflow-auth .eventflow-auth-header a:hover { color: #D9B876 !important; }
+.eventflow-auth .eventflow-auth-card {
+  --ef-surface-fg: #0B1120;
+  --ef-surface-muted: #5B5143;
+  background: linear-gradient(145deg, #F5EFE2 0%, #EDE3CB 100%) !important;
+  color: #0B1120 !important;
+}
+.eventflow-auth .eventflow-auth-card :is(h1,h2,h3,h4,h5,h6,strong,b) {
+  color: #0B1120 !important;
+  -webkit-text-fill-color: #0B1120 !important;
+}
+.eventflow-auth .eventflow-auth-card :is(p,span,label,small) {
+  text-shadow: none !important;
+}
+.eventflow-auth .eventflow-auth-card label {
+  color: #332B23 !important;
+  -webkit-text-fill-color: #332B23 !important;
+}
+.eventflow-auth .eventflow-auth-card input:not([type="checkbox"]):not([type="radio"]),
+.eventflow-auth .eventflow-auth-card textarea,
+.eventflow-auth .eventflow-auth-card select {
+  color: #071326 !important;
+  -webkit-text-fill-color: #071326 !important;
+  background: #FFFDF8 !important;
+  border-color: #B7A98D !important;
+  caret-color: #16345D !important;
+  opacity: 1 !important;
+  font-weight: 650 !important;
+}
+.eventflow-auth .eventflow-auth-card input::placeholder,
+.eventflow-auth .eventflow-auth-card textarea::placeholder {
+  color: #6B6252 !important;
+  -webkit-text-fill-color: #6B6252 !important;
+  opacity: 1 !important;
+}
+.eventflow-auth .eventflow-auth-card :is(input,textarea,select):focus {
+  border-color: #2D5FD2 !important;
+  box-shadow: 0 0 0 3px rgba(45,95,210,.16) !important;
+  outline: none !important;
+}
+.eventflow-auth .eventflow-auth-card select option {
+  background: #FFFDF8 !important;
+  color: #071326 !important;
+}
+.eventflow-auth .eventflow-auth-card input:-webkit-autofill,
+.eventflow-auth .eventflow-auth-card input:-webkit-autofill:hover,
+.eventflow-auth .eventflow-auth-card input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #071326 !important;
+  -webkit-box-shadow: 0 0 0 1000px #FFFDF8 inset !important;
+  box-shadow: 0 0 0 1000px #FFFDF8 inset !important;
+}
+/* Collapse old purple/teal auth accents back into the 3-color EventFlow system. */
+.eventflow-auth .eventflow-auth-card :is([class*="bg-indigo-600"],[class*="bg-teal-600"]) {
+  background-color: #16345D !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.eventflow-auth .eventflow-auth-card :is([class*="bg-indigo-50"],[class*="bg-teal-50"]) {
+  background-color: #F7F1E4 !important;
+}
+.eventflow-auth .eventflow-auth-card :is([class*="border-indigo-"],[class*="border-teal-"]) {
+  border-color: #C9A15C !important;
+}
+.eventflow-auth .eventflow-auth-card :is([class*="text-indigo-"],[class*="text-teal-"]) {
+  color: #16345D !important;
+  -webkit-text-fill-color: #16345D !important;
+}
+.eventflow-auth .eventflow-auth-card button[class*="bg-[#0B1120]"] {
+  background: #102A43 !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+.eventflow-auth .eventflow-auth-card button[class*="bg-[#0B1120]"]:hover {
+  background: #16345D !important;
+}
+.eventflow-auth .eventflow-auth-card [class*="text-[#4F7CFF]"] {
+  color: #1F56C5 !important;
+  -webkit-text-fill-color: #1F56C5 !important;
+}

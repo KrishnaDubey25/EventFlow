@@ -1,0 +1,20 @@
+{
+  "original_files": 146,
+  "unchanged_count": 133,
+  "modified_for_additive_integration_or_build_repairs": [
+    ".env.example",
+    ".gitignore",
+    "package.json",
+    "server.ts",
+    "src/App.tsx",
+    "src/index.css",
+    "src/components/notifications/NotificationDrawer.tsx",
+    "src/pages/AttendeeOverviewPage.tsx",
+    "src/pages/EventHubPage.tsx",
+    "src/pages/operator/OperatorEventDetailPage.tsx",
+    "src/pages/organizer/OrganizerCrowdPage.tsx",
+    "src/services/attendeeIntelligenceService.ts",
+    "src/components/event-hub/AttendeeLiveStatusGuide.tsx"
+  ],
+  "removed": []
+}

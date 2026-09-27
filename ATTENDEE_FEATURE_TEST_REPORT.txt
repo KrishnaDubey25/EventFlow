@@ -1,0 +1,18 @@
+EventFlow attendee/simulation validation
+-----------------------------------------
+Existing workflow audit: 24/24 PASS
+Existing user-request audit: 30/30 PASS
+New targeted checks: 10/10 PASS
+TS/TSX syntax scan: 159 files / 0 syntax errors
+
+Targeted checks:
+PASS attendee overview scoped navy/beige palette
+PASS destination search on indoor map
+PASS nearby operators visible to attendee
+PASS operator detail exposes Request Help
+PASS organizer Run Simulation control
+PASS organizer Simulated Data control
+PASS fake GPS entries explicitly labeled SIMULATED
+PASS animated simulation phase support
+PASS operator help lifecycle preserved
+PASS published-map read path preserved
